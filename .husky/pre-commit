@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🎨 Running code formatter..."
+make lint-fix
+
+echo ""
+echo "🧪 Running tests..."
+make test
+
+echo ""
+echo "✅ Pre-commit checks passed!"
