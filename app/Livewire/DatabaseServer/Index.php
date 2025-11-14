@@ -60,6 +60,7 @@ class Index extends Component
     public function render()
     {
         $servers = DatabaseServer::query()
+            ->with(['backup.volume'])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('name', 'like', '%'.$this->search.'%')
