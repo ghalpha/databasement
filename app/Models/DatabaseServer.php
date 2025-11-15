@@ -8,6 +8,38 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ * @property string $id
+ * @property string $name
+ * @property string $host
+ * @property int $port
+ * @property string $database_type
+ * @property string $username
+ * @property string $password
+ * @property string|null $database_name
+ * @property string|null $description
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Backup|null $backup
+ *
+ * @method static \Database\Factories\DatabaseServerFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DatabaseServer newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DatabaseServer newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DatabaseServer query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DatabaseServer whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DatabaseServer whereDatabaseName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DatabaseServer whereDatabaseType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DatabaseServer whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DatabaseServer whereHost($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DatabaseServer whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DatabaseServer whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DatabaseServer wherePassword($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DatabaseServer wherePort($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DatabaseServer whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DatabaseServer whereUsername($value)
+ *
+ * @mixin \Eloquent
+ */
 class DatabaseServer extends Model
 {
     /** @use HasFactory<DatabaseServerFactory> */
