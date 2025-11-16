@@ -17,6 +17,12 @@
             </x-banner>
         @endif
 
+        @if (session('error'))
+            <x-banner variant="danger" dismissible class="mb-6">
+                {{ session('error') }}
+            </x-banner>
+        @endif
+
         <x-card :padding="false">
             <!-- Search Bar -->
             <div class="border-b border-zinc-200 p-4 dark:border-zinc-700">
@@ -159,6 +165,11 @@
                                 </td>
                                 <td class="text-right">
                                     <div class="table-actions">
+                                        @if($server->backup)
+                                            <flux:button size="sm" variant="ghost" icon="arrow-down-tray" wire:click="runBackup('{{ $server->id }}')" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                                                {{ __('Backup Now') }}
+                                            </flux:button>
+                                        @endif
                                         <flux:button size="sm" variant="ghost" :href="route('database-servers.edit', $server)" icon="pencil" wire:navigate>
                                             {{ __('Edit') }}
                                         </flux:button>

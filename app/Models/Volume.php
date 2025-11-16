@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Backup> $backups
  * @property-read int|null $backups_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Snapshot> $snapshots
+ * @property-read int|null $snapshots_count
  *
  * @method static \Database\Factories\VolumeFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Volume newModelQuery()
@@ -53,5 +55,10 @@ class Volume extends Model
     public function backups(): HasMany
     {
         return $this->hasMany(Backup::class);
+    }
+
+    public function snapshots(): HasMany
+    {
+        return $this->hasMany(Snapshot::class);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property string $id
@@ -15,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\DatabaseServer $databaseServer
  * @property-read \App\Models\Volume $volume
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Snapshot> $snapshots
+ * @property-read int|null $snapshots_count
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Backup newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Backup newQuery()
@@ -46,5 +49,10 @@ class Backup extends Model
     public function volume(): BelongsTo
     {
         return $this->belongsTo(Volume::class);
+    }
+
+    public function snapshots(): HasMany
+    {
+        return $this->hasMany(Snapshot::class);
     }
 }

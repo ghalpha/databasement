@@ -144,11 +144,23 @@ class EndToEndTestBackup extends Command
     {
         $this->info("\n💾 Running backup task...");
 
-        $startTime = microtime(true);
-        $backupTask->run($this->databaseServer);
-        $duration = round((microtime(true) - $startTime) * 1000, 2);
+        $snapshot = $backupTask->run($this->databaseServer, 'manual');
 
-        $this->line("   ✓ Backup completed in {$duration}ms");
+        $this->line("   ✓ Snapshot created (ID: {$snapshot->id})");
+        $this->line("   ✓ Status: {$snapshot->status}");
+        $this->line("   ✓ Duration: {$snapshot->getHumanDuration()}");
+        $this->line("   ✓ File size: {$snapshot->getHumanFileSize()}");
+
+        if ($snapshot->database_size_bytes) {
+            $this->line("   ✓ Database size: {$snapshot->getHumanDatabaseSize()}");
+        }
+
+        if ($snapshot->checksum) {
+            $this->line('   ✓ Checksum: '.substr($snapshot->checksum, 0, 16).'...');
+        }
+
+        // Store snapshot for cleanup
+        $this->backupFilePath = null; // We'll let snapshot deletion handle file cleanup
     }
 
     private function verifyBackup(): void
@@ -208,16 +220,12 @@ class EndToEndTestBackup extends Command
     {
         $this->info("\n🧹 Cleaning up...");
 
-        // Delete backup file
-        if ($this->backupFilePath && file_exists($this->backupFilePath)) {
-            unlink($this->backupFilePath);
-            $this->line('   ✓ Deleted backup file: '.basename($this->backupFilePath));
-        }
-
-        // Delete models (cascade will handle backup)
+        // Delete models (cascade will handle backup and snapshots)
+        // Snapshot deletion will trigger file cleanup automatically
         if ($this->databaseServer) {
+            $snapshotCount = $this->databaseServer->snapshots()->count();
             $this->databaseServer->delete();
-            $this->line('   ✓ Deleted DatabaseServer and Backup');
+            $this->line('   ✓ Deleted DatabaseServer, Backup, and '.$snapshotCount.' Snapshot(s)');
         }
 
         if ($this->volume) {

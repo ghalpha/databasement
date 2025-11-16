@@ -6,6 +6,7 @@ use Database\Factories\DatabaseServerFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
@@ -21,6 +22,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\Backup|null $backup
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Snapshot> $snapshots
+ * @property-read int|null $snapshots_count
  *
  * @method static \Database\Factories\DatabaseServerFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|DatabaseServer newModelQuery()
@@ -72,5 +75,10 @@ class DatabaseServer extends Model
     public function backup(): HasOne
     {
         return $this->hasOne(Backup::class);
+    }
+
+    public function snapshots(): HasMany
+    {
+        return $this->hasMany(Snapshot::class);
     }
 }

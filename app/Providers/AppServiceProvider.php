@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\Backup\Databases\MysqlDatabaseInterface;
 use App\Services\Backup\Databases\PostgresqlDatabaseInterface;
+use App\Services\Backup\DatabaseSizeCalculator;
 use App\Services\Backup\Filesystems\Awss3Filesystem;
 use App\Services\Backup\Filesystems\FilesystemProvider;
 use App\Services\Backup\Filesystems\LocalFilesystem;
@@ -23,6 +24,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(GzipCompressor::class);
         $this->app->singleton(MysqlDatabaseInterface::class);
         $this->app->singleton(PostgresqlDatabaseInterface::class);
+        $this->app->singleton(DatabaseSizeCalculator::class);
 
         // Register FilesystemProvider with configuration
         $this->app->singleton(FilesystemProvider::class, function ($app) {

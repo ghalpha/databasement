@@ -26,6 +26,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('volumes.create');
     Route::get('volumes/{volume}/edit', \App\Livewire\Volume\Edit::class)
         ->name('volumes.edit');
+
+    Route::get('snapshots', \App\Livewire\Snapshot\Index::class)
+        ->name('snapshots.index');
 });
 
 Route::middleware(['auth'])->group(function () {

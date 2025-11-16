@@ -3,6 +3,7 @@
 namespace App\Livewire\DatabaseServer;
 
 use App\Models\DatabaseServer;
+use App\Services\Backup\BackupTask;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -54,6 +55,25 @@ class Index extends Component
             $this->deleteId = null;
 
             session()->flash('status', 'Database server deleted successfully!');
+        }
+    }
+
+    public function runBackup(string $id, BackupTask $backupTask)
+    {
+        try {
+            $server = DatabaseServer::with(['backup.volume'])->findOrFail($id);
+
+            if (! $server->backup) {
+                session()->flash('error', 'No backup configuration found for this database server.');
+
+                return;
+            }
+
+            $snapshot = $backupTask->run($server, 'manual', auth()->id());
+
+            session()->flash('status', "Backup completed successfully! Snapshot ID: {$snapshot->id}");
+        } catch (\Exception $e) {
+            session()->flash('error', 'Backup failed: '.$e->getMessage());
         }
     }
 
