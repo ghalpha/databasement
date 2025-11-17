@@ -4,8 +4,8 @@ use App\Models\Backup;
 use App\Models\DatabaseServer;
 use App\Models\Volume;
 use App\Services\Backup\BackupTask;
-use App\Services\Backup\Databases\MysqlDatabaseInterface;
-use App\Services\Backup\Databases\PostgresqlDatabaseInterface;
+use App\Services\Backup\Databases\MysqlDatabase;
+use App\Services\Backup\Databases\PostgresqlDatabase;
 use App\Services\Backup\DatabaseSizeCalculator;
 use App\Services\Backup\Filesystems\FilesystemProvider;
 use App\Services\Backup\GzipCompressor;
@@ -18,8 +18,8 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     // Mock dependencies
-    $this->mysqlDatabase = Mockery::mock(MysqlDatabaseInterface::class);
-    $this->postgresqlDatabase = Mockery::mock(PostgresqlDatabaseInterface::class);
+    $this->mysqlDatabase = Mockery::mock(MysqlDatabase::class);
+    $this->postgresqlDatabase = Mockery::mock(PostgresqlDatabase::class);
     $this->shellProcessor = Mockery::mock(ShellProcessor::class);
     $this->filesystemProvider = Mockery::mock(FilesystemProvider::class);
     $this->compressor = Mockery::mock(GzipCompressor::class);

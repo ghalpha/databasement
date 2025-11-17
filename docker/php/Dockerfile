@@ -1,6 +1,5 @@
 FROM dunglas/frankenphp:1.9-php8.4-alpine
 
-RUN cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini
 
 RUN install-php-extensions \
     ctype \
@@ -18,8 +17,13 @@ RUN install-php-extensions \
     xml \
     pdo_mysql \
     intl \
-    opcache \
-    @composer
+    opcache
+
+COPY --from=composer/composer:latest-bin /composer /usr/bin/composer
+# Add DB CLI tools used by the app: mysqldump, mysql, pg_dump, psql
+RUN apk add --no-cache \
+        mariadb-client mariadb-connector-c \
+        postgresql-client
 
 ENV USER_ID=1000
 ENV USER=application

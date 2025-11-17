@@ -2,7 +2,7 @@
 
 namespace App\Services\Backup\Databases;
 
-class PostgresqlDatabaseInterface implements DatabaseInterface
+class PostgresqlDatabase implements DatabaseInterface
 {
     private array $config;
 

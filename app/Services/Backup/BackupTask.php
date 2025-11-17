@@ -4,8 +4,8 @@ namespace App\Services\Backup;
 
 use App\Models\DatabaseServer;
 use App\Models\Snapshot;
-use App\Services\Backup\Databases\MysqlDatabaseInterface;
-use App\Services\Backup\Databases\PostgresqlDatabaseInterface;
+use App\Services\Backup\Databases\MysqlDatabase;
+use App\Services\Backup\Databases\PostgresqlDatabase;
 use App\Services\Backup\Filesystems\FilesystemProvider;
 use League\Flysystem\Filesystem;
 use Symfony\Component\Process\Process;
@@ -13,8 +13,8 @@ use Symfony\Component\Process\Process;
 class BackupTask
 {
     public function __construct(
-        private readonly MysqlDatabaseInterface $mysqlDatabase,
-        private readonly PostgresqlDatabaseInterface $postgresqlDatabase,
+        private readonly MysqlDatabase $mysqlDatabase,
+        private readonly PostgresqlDatabase $postgresqlDatabase,
         private readonly ShellProcessor $shellProcessor,
         private readonly FilesystemProvider $filesystemProvider,
         private readonly GzipCompressor $compressor,

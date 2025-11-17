@@ -2,9 +2,22 @@
 
 namespace App\Services\Backup\Databases;
 
-class MysqlDatabaseInterface implements DatabaseInterface
+class MysqlDatabase implements DatabaseInterface
 {
     private array $config;
+
+    private array $mysqlCli = [
+        'mariadb' => [
+            'dump' => 'mariadb-dump',
+            'restore' => 'mariadb-restore',
+        ],
+        'mysql' => [
+            'dump' => 'mysqldump',
+            'restore' => 'mysql',
+        ],
+    ];
+
+    private string $mysqlCliUsed = 'mariadb';
 
     public function handles($type): bool
     {
@@ -27,6 +40,8 @@ class MysqlDatabaseInterface implements DatabaseInterface
         }
         if (array_key_exists('ssl', $this->config) && $this->config['ssl'] === true) {
             $extras[] = '--ssl';
+        } elseif ($this->mysqlCliUsed === 'mariadb') {
+            $extras[] = '--skip_ssl';
         }
         if (array_key_exists('extraParams', $this->config) && $this->config['extraParams']) {
             $extras[] = $this->config['extraParams'];
@@ -41,7 +56,7 @@ class MysqlDatabaseInterface implements DatabaseInterface
             }
         }
 
-        $command = 'mysqldump --routines '.implode(' ', $extras).'%s %s > %s';
+        $command = $this->mysqlCli[$this->mysqlCliUsed]['dump'].' --routines '.implode(' ', $extras).'%s %s > %s';
 
         return sprintf(
             $command,

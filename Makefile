@@ -5,6 +5,14 @@ GREEN  := \033[0;32m
 YELLOW := \033[0;33m
 NC     := \033[0m # No Color
 
+# Docker / PHP helpers
+DOCKER_COMPOSE := docker compose
+PHP_SERVICE    := php
+PHP_EXEC       := $(DOCKER_COMPOSE) exec $(PHP_SERVICE)
+PHP_COMPOSER   := $(PHP_EXEC) composer
+PHP_ARTISAN    := $(PHP_EXEC) php artisan
+NPM_EXEC       := npm
+
 ##@ Help
 
 help: ## Display this help message
@@ -14,86 +22,58 @@ help: ## Display this help message
 ##@ Development
 
 install: ## Install dependencies (composer + npm)
-	composer install
-	npm install
+	$(PHP_COMPOSER) install
+	$(NPM_EXEC) install
 
 setup: ## Full project setup (install, env, key, migrate, build)
-	composer setup
+	$(PHP_COMPOSER) setup
 
 start: ## Start development server (all services: server, queue, logs, vite)
-	composer dev
+	$(PHP_COMPOSER) dev
 
 ##@ Testing
 
 test: ## Run all tests
-	php artisan test
+	$(PHP_ARTISAN) test
 
 test-filter: ## Run tests with filter (usage: make test-filter FILTER=DatabaseServer)
-	php artisan test --filter=$(FILTER)
+	$(PHP_ARTISAN) test --filter=$(FILTER)
 
 test-coverage: ## Run tests with coverage
-	php artisan test --coverage
+	$(PHP_ARTISAN) test --coverage
 
 ##@ Code Quality
 
 lint-check: ## Check code style with Laravel Pint
-	vendor/bin/pint --test
+	$(PHP_EXEC) vendor/bin/pint --test
 
 lint-fix: ## Fix code style with Laravel Pint
-	vendor/bin/pint
+	$(PHP_EXEC) vendor/bin/pint
 
 lint: lint-fix ## Alias for lint-fix
 
 phpstan: ## Run PHPStan static analysis
-	vendor/bin/phpstan analyse --memory-limit=1G
+	$(PHP_EXEC) vendor/bin/phpstan analyse --memory-limit=1G
 
-phpstan-baseline: ## Generate PHPStan baseline
-	vendor/bin/phpstan analyse --memory-limit=1G --generate-baseline
-
-analyse: phpstan ## Alias for phpstan
-
-##@ Database
-
-migrate: ## Run database migrations
-	php artisan migrate
-
-migrate-fresh: ## Fresh migration (drops all tables)
-	php artisan migrate:fresh
-
-migrate-fresh-seed: ## Fresh migration with seeders
-	php artisan migrate:fresh --seed
-
-db-seed: ## Run database seeders
-	php artisan db:seed
+pre-commit: lint-fix phpstan test
 
 ##@ Assets
 
 build: ## Build production assets
-	npm run build
+	$(NPM_EXEC) run build
 
 dev-assets: ## Start Vite dev server only
-	npm run dev
+	$(NPM_EXEC) run dev
 
 ##@ Maintenance
 
 clean: ## Clear all caches
-	php artisan cache:clear
-	php artisan config:clear
-	php artisan route:clear
-	php artisan view:clear
+	$(PHP_ARTISAN) cache:clear
+	$(PHP_ARTISAN) config:clear
+	$(PHP_ARTISAN) route:clear
+	$(PHP_ARTISAN) view:clear
 
 optimize: ## Optimize the application for production
-	php artisan config:cache
-	php artisan route:cache
-	php artisan view:cache
-
-##@ Utilities
-
-tinker: ## Open Laravel Tinker REPL
-	php artisan tinker
-
-queue: ## Start queue worker
-	php artisan queue:listen --tries=1
-
-logs: ## Tail application logs with Pail
-	php artisan pail --timeout=0
+	$(PHP_ARTISAN) config:cache
+	$(PHP_ARTISAN) route:cache
+	$(PHP_ARTISAN) view:cache

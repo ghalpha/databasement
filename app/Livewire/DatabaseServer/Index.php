@@ -71,7 +71,7 @@ class Index extends Component
             $snapshot = $backupTask->run($server, 'manual', auth()->id());
 
             Toaster::success("Backup completed successfully! Snapshot ID: {$snapshot->id}");
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Toaster::error('Backup failed: '.$e->getMessage());
         }
     }
