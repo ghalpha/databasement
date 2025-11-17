@@ -118,7 +118,7 @@ class EndToEndTestBackup extends Command
         return match ($type) {
             'mysql' => [
                 'name' => 'E2E Test MySQL Server',
-                'host' => '0.0.0.0',
+                'host' => 'mysql',
                 'port' => 3306,
                 'database_type' => 'mysql',
                 'username' => 'admin',
@@ -128,7 +128,7 @@ class EndToEndTestBackup extends Command
             ],
             'postgres' => [
                 'name' => 'E2E Test PostgreSQL Server',
-                'host' => '0.0.0.0',
+                'host' => 'postgres',
                 'port' => 5432,
                 'database_type' => 'postgresql',
                 'username' => 'admin',

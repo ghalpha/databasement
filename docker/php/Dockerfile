@@ -16,6 +16,7 @@ RUN install-php-extensions \
     tokenizer \
     xml \
     pdo_mysql \
+    pdo_pgsql \
     intl \
     opcache
 
