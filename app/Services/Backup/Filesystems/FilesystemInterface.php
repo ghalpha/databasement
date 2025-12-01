@@ -6,7 +6,10 @@ use League\Flysystem\Filesystem;
 
 interface FilesystemInterface
 {
-    public function handles($type): bool;
+    public function handles(?string $type): bool;
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     public function get(array $config): Filesystem;
 }

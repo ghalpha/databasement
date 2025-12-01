@@ -68,6 +68,39 @@ $storageTypes = [
                 {{ __('The prefix is prepended to all backup file paths in the S3 bucket.') }}
             </p>
         @endif
+
+        <!-- Test Connection Button -->
+        <div class="pt-2">
+            <x-button
+                class="w-full btn-outline"
+                type="button"
+                icon="o-arrow-path"
+                wire:click="testConnection"
+                :disabled="$form->testingConnection"
+                spinner="testConnection"
+            >
+                @if($form->testingConnection)
+                    {{ __('Testing Connection...') }}
+                @else
+                    {{ __('Test Connection') }}
+                @endif
+            </x-button>
+        </div>
+
+        <!-- Connection Test Result -->
+        @if($form->connectionTestMessage)
+            <div class="mt-2">
+                @if($form->connectionTestSuccess)
+                    <x-alert class="alert-success" icon="o-check-circle">
+                        {{ $form->connectionTestMessage }}
+                    </x-alert>
+                @else
+                    <x-alert class="alert-error" icon="o-x-circle">
+                        {{ $form->connectionTestMessage }}
+                    </x-alert>
+                @endif
+            </div>
+        @endif
     </div>
 
     <!-- Submit Button -->

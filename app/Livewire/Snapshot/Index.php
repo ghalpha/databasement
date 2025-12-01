@@ -96,7 +96,7 @@ class Index extends Component
         $snapshot = Snapshot::with('volume')->findOrFail($id);
 
         try {
-            $filesystem = $filesystemProvider->get($snapshot->volume->type);
+            $filesystem = $filesystemProvider->getForVolume($snapshot->volume);
 
             if (! $filesystem->fileExists($snapshot->path)) {
                 $this->error('Backup file not found.', position: 'toast-bottom');

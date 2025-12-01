@@ -3,6 +3,7 @@
 namespace App\Livewire\Forms;
 
 use App\Models\Volume;
+use App\Services\VolumeConnectionTester;
 use Livewire\Attributes\Validate;
 use Livewire\Form;
 
@@ -26,6 +27,13 @@ class VolumeForm extends Form
     // Local Config
     #[Validate('required_if:type,local|string|max:500')]
     public string $path = '';
+
+    // Connection test state
+    public ?string $connectionTestMessage = null;
+
+    public bool $connectionTestSuccess = false;
+
+    public bool $testingConnection = false;
 
     public function setVolume(Volume $volume)
     {
@@ -97,5 +105,44 @@ class VolumeForm extends Form
             ],
             default => throw new \InvalidArgumentException("Invalid volume type: {$this->type}"),
         };
+    }
+
+    public function testConnection(): void
+    {
+        $this->testingConnection = true;
+        $this->connectionTestMessage = null;
+
+        // Validate type-specific fields
+        try {
+            if ($this->type === 'local') {
+                $this->validate([
+                    'path' => 'required|string|max:500',
+                ]);
+            } elseif ($this->type === 's3') {
+                $this->validate([
+                    'bucket' => 'required|string|max:255',
+                ]);
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->testingConnection = false;
+            $this->connectionTestSuccess = false;
+            $this->connectionTestMessage = 'Please fill in all required configuration fields.';
+
+            return;
+        }
+
+        /** @var VolumeConnectionTester $tester */
+        $tester = app(VolumeConnectionTester::class);
+
+        $result = $tester->test([
+            'type' => $this->type,
+            'path' => $this->path,
+            'bucket' => $this->bucket,
+            'prefix' => $this->prefix,
+        ]);
+
+        $this->connectionTestSuccess = $result['success'];
+        $this->connectionTestMessage = $result['message'];
+        $this->testingConnection = false;
     }
 }

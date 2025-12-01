@@ -8,9 +8,9 @@ use League\Flysystem\Filesystem;
 
 class Awss3Filesystem implements FilesystemInterface
 {
-    public function handles($type): bool
+    public function handles(?string $type): bool
     {
-        return strtolower($type ?? '') == 'awss3';
+        return in_array(strtolower($type ?? ''), ['s3', 'awss3']);
     }
 
     public function get(array $config): Filesystem
@@ -26,6 +26,9 @@ class Awss3Filesystem implements FilesystemInterface
             'use_path_style_endpoint' => $config['use_path_style_endpoint'] ?? false,
         ]);
 
-        return new Filesystem(new AwsS3V3Adapter($client, $config['bucket'], $config['root']));
+        // Support both 'root' (from config/backup.php) and 'prefix' (from Volume database)
+        $root = $config['root'] ?? $config['prefix'] ?? '';
+
+        return new Filesystem(new AwsS3V3Adapter($client, $config['bucket'], $root));
     }
 }

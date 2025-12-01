@@ -18,6 +18,11 @@ class Create extends Component
         return $this->redirect(route('volumes.index'), navigate: true);
     }
 
+    public function testConnection()
+    {
+        $this->form->testConnection();
+    }
+
     public function render()
     {
         return view('livewire.volume.create')

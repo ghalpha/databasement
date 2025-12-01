@@ -4,11 +4,13 @@ namespace App\Services\Backup\Filesystems;
 
 use App\Models\Snapshot;
 use App\Models\Volume;
+use League\Flysystem\Filesystem;
 
 class FilesystemProvider
 {
     private array $config;
 
+    /** @var FilesystemInterface[] */
     private array $filesystems = [];
 
     public function __construct(array $config)
@@ -21,7 +23,26 @@ class FilesystemProvider
         $this->filesystems[] = $filesystem;
     }
 
-    public function get($name)
+    /**
+     * Get a filesystem instance for a Volume (uses database config)
+     */
+    public function getForVolume(Volume $volume): Filesystem
+    {
+        foreach ($this->filesystems as $filesystem) {
+            if ($filesystem->handles($volume->type)) {
+                return $filesystem->get($volume->config);
+            }
+        }
+
+        throw new \Exception("The requested filesystem type {$volume->type} is not currently supported.");
+    }
+
+    /**
+     * Get a filesystem instance by config name (uses config/backup.php)
+     *
+     * @deprecated Use getForVolume() when you have a Volume object
+     */
+    public function get(string $name): Filesystem
     {
         $type = $this->getConfig($name, 'type');
 
@@ -34,7 +55,7 @@ class FilesystemProvider
         throw new \Exception("The requested filesystem type {$type} is not currently supported.");
     }
 
-    public function getConfig($name, $key = null)
+    public function getConfig(string $name, ?string $key = null): mixed
     {
         if ($key === null) {
             return $this->config[$name] ?? null;
@@ -43,14 +64,17 @@ class FilesystemProvider
         return $this->config[$name][$key] ?? null;
     }
 
-    public function getAvailableProviders()
+    /**
+     * @return string[]
+     */
+    public function getAvailableProviders(): array
     {
         return array_keys($this->config);
     }
 
     public function transfert(Volume $volume, string $source, string $destination): void
     {
-        $filesystem = $this->get($volume->type);
+        $filesystem = $this->getForVolume($volume);
         $stream = fopen($source, 'r');
         if ($stream === false) {
             throw new \RuntimeException("Failed to open file: {$source}");
@@ -63,17 +87,16 @@ class FilesystemProvider
                 fclose($stream);
             }
         }
-
     }
 
-    public function download(Snapshot $snapshot, $destination): void
+    public function download(Snapshot $snapshot, string $destination): void
     {
-        $filesystem = $this->get($snapshot->volume->type);
+        $filesystem = $this->getForVolume($snapshot->volume);
         $stream = $filesystem->readStream($snapshot->path);
         $localStream = fopen($destination, 'w');
 
-        if ($stream === false || $localStream === false) {
-            throw new \RuntimeException('Failed to open streams for download');
+        if ($localStream === false) {
+            throw new \RuntimeException("Failed to open destination file: {$destination}");
         }
 
         try {
@@ -82,9 +105,7 @@ class FilesystemProvider
             if (is_resource($stream)) {
                 fclose($stream);
             }
-            if (is_resource($localStream)) {
-                fclose($localStream);
-            }
+            fclose($localStream);
         }
     }
 }
