@@ -54,10 +54,5 @@
                 <x-button type="submit" class="btn-primary w-full" label="{{ __('Create account') }}" data-test="register-user-button" />
             </div>
         </form>
-
-        <div class="space-x-1 rtl:space-x-reverse text-center text-sm">
-            <span>{{ __('Already have an account?') }}</span>
-            <a href="{{ route('login') }}" class="link link-primary" wire:navigate>{{ __('Log in') }}</a>
-        </div>
     </div>
 </x-layouts.auth>

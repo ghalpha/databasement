@@ -47,12 +47,5 @@
                 <x-button type="submit" class="btn-primary w-full" label="{{ __('Log in') }}" data-test="login-button" />
             </div>
         </x-form>
-
-        @if (Route::has('register'))
-            <div class="space-x-1 text-sm text-center rtl:space-x-reverse">
-                <span>{{ __('Don\'t have an account?') }}</span>
-                <a href="{{ route('register') }}" class="link link-primary" wire:navigate>{{ __('Sign up') }}</a>
-            </div>
-        @endif
     </div>
 </x-layouts.auth>

@@ -4,13 +4,15 @@ namespace App\Livewire\DatabaseServer;
 
 use App\Jobs\ProcessBackupJob;
 use App\Models\DatabaseServer;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Mary\Traits\Toast;
 
 class Index extends Component
 {
-    use Toast, WithPagination;
+    use AuthorizesRequests, Toast, WithPagination;
 
     public string $search = '';
 
@@ -18,8 +20,10 @@ class Index extends Component
 
     public bool $drawer = false;
 
+    #[Locked]
     public ?string $deleteId = null;
 
+    #[Locked]
     public ?string $restoreId = null;
 
     public bool $showDeleteModal = false;
@@ -57,38 +61,54 @@ class Index extends Component
 
     public function confirmDelete(string $id)
     {
+        $server = DatabaseServer::findOrFail($id);
+
+        $this->authorize('delete', $server);
+
         $this->deleteId = $id;
         $this->showDeleteModal = true;
     }
 
     public function delete()
     {
-        if ($this->deleteId) {
-            DatabaseServer::findOrFail($this->deleteId)->delete();
-            $this->deleteId = null;
-
-            session()->flash('status', 'Database server deleted successfully!');
-            $this->showDeleteModal = false;
+        if (! $this->deleteId) {
+            return;
         }
+
+        $server = DatabaseServer::findOrFail($this->deleteId);
+
+        $this->authorize('delete', $server);
+
+        $server->delete();
+        $this->deleteId = null;
+        $this->showDeleteModal = false;
+
+        session()->flash('status', 'Database server deleted successfully!');
     }
 
     public function confirmRestore(string $id)
     {
+        $server = DatabaseServer::findOrFail($id);
+
+        $this->authorize('restore', $server);
+
         $this->restoreId = $id;
         $this->dispatch('open-restore-modal', targetServerId: $id);
     }
 
     public function runBackup(string $id)
     {
+        $server = DatabaseServer::with(['backup.volume'])->findOrFail($id);
+
+        $this->authorize('backup', $server);
+
+        if (! $server->backup) {
+            $this->error('No backup configuration found for this database server.', position: 'toast-bottom');
+
+            return;
+        }
+
         try {
-            $server = DatabaseServer::with(['backup.volume'])->findOrFail($id);
-
-            if (! $server->backup) {
-                $this->error('No backup configuration found for this database server.', position: 'toast-bottom');
-
-                return;
-            }
-
             // Dispatch the backup job
             ProcessBackupJob::dispatch($id, 'manual', auth()->id());
 

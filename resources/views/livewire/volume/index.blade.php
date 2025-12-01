@@ -6,7 +6,9 @@
         </x-slot:middle>
         <x-slot:actions>
             <x-button label="{{ __('Filters') }}" @click="$wire.drawer = true" responsive icon="o-funnel" class="btn-ghost" />
-            <x-button label="{{ __('Add Volume') }}" link="{{ route('volumes.create') }}" icon="o-plus" class="btn-primary" wire:navigate />
+            @can('create', App\Models\Volume::class)
+                <x-button label="{{ __('Add Volume') }}" link="{{ route('volumes.create') }}" icon="o-plus" class="btn-primary" wire:navigate />
+            @endcan
         </x-slot:actions>
     </x-header>
 
@@ -51,19 +53,23 @@
 
             @scope('actions', $volume)
                 <div class="flex gap-2 justify-end">
-                    <x-button
-                        icon="o-pencil"
-                        link="{{ route('volumes.edit', $volume) }}"
-                        wire:navigate
-                        tooltip="{{ __('Edit') }}"
-                        class="btn-ghost btn-sm"
-                    />
-                    <x-button
-                        icon="o-trash"
-                        wire:click="confirmDelete('{{ $volume->id }}')"
-                        tooltip="{{ __('Delete') }}"
-                        class="btn-ghost btn-sm text-error"
-                    />
+                    @can('update', $volume)
+                        <x-button
+                            icon="o-pencil"
+                            link="{{ route('volumes.edit', $volume) }}"
+                            wire:navigate
+                            tooltip="{{ __('Edit') }}"
+                            class="btn-ghost btn-sm"
+                        />
+                    @endcan
+                    @can('delete', $volume)
+                        <x-button
+                            icon="o-trash"
+                            wire:click="confirmDelete('{{ $volume->id }}')"
+                            tooltip="{{ __('Delete') }}"
+                            class="btn-ghost btn-sm text-error"
+                        />
+                    @endcan
                 </div>
             @endscope
         </x-table>

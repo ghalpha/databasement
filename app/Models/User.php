@@ -14,9 +14,12 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property int $id
  * @property string $name
  * @property string $email
+ * @property string $role
  * @property \Illuminate\Support\Carbon|null $email_verified_at
- * @property string $password
+ * @property string|null $password
  * @property string|null $remember_token
+ * @property string|null $invitation_token
+ * @property \Illuminate\Support\Carbon|null $invitation_accepted_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property string|null $two_factor_secret
@@ -42,6 +45,11 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereTwoFactorRecoveryCodes($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereTwoFactorSecret($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRole($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereInvitationToken($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereInvitationAcceptedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User active()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User pending()
  *
  * @mixin \Eloquent
  */
@@ -49,6 +57,18 @@ class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, TwoFactorAuthenticatable;
+
+    public const ROLE_VIEWER = 'viewer';
+
+    public const ROLE_MEMBER = 'member';
+
+    public const ROLE_ADMIN = 'admin';
+
+    public const ROLES = [
+        self::ROLE_VIEWER,
+        self::ROLE_MEMBER,
+        self::ROLE_ADMIN,
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -59,6 +79,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'invitation_token',
+        'invitation_accepted_at',
     ];
 
     /**
@@ -83,6 +106,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'invitation_accepted_at' => 'datetime',
         ];
     }
 
@@ -101,5 +125,73 @@ class User extends Authenticatable
     public function triggeredSnapshots(): HasMany
     {
         return $this->hasMany(Snapshot::class, 'triggered_by_user_id');
+    }
+
+    public function isViewer(): bool
+    {
+        return $this->role === self::ROLE_VIEWER;
+    }
+
+    public function isMember(): bool
+    {
+        return $this->role === self::ROLE_MEMBER;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    public function canManageUsers(): bool
+    {
+        return $this->isAdmin();
+    }
+
+    public function canPerformActions(): bool
+    {
+        return ! $this->isViewer();
+    }
+
+    public function isPending(): bool
+    {
+        return $this->invitation_token !== null && $this->password === null;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->invitation_accepted_at !== null;
+    }
+
+    public function generateInvitationToken(): string
+    {
+        $this->invitation_token = Str::random(64);
+        $this->save();
+
+        return $this->invitation_token;
+    }
+
+    public function getInvitationUrl(): ?string
+    {
+        return $this->invitation_token
+            ? route('invitation.accept', $this->invitation_token)
+            : null;
+    }
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<static>
+     */
+    public function scopeActive($query)
+    {
+        return $query->whereNotNull('invitation_accepted_at');
+    }
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<static>
+     */
+    public function scopePending($query)
+    {
+        return $query->whereNull('invitation_accepted_at');
     }
 }

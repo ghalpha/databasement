@@ -6,18 +6,23 @@ use App\Jobs\ProcessRestoreJob;
 use App\Models\DatabaseServer;
 use App\Models\Snapshot;
 use App\Services\Backup\DatabaseListService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Mary\Traits\Toast;
 
 class RestoreModal extends Component
 {
-    use Toast;
+    use AuthorizesRequests, Toast;
 
+    #[Locked]
     public ?DatabaseServer $targetServer = null;
 
+    #[Locked]
     public ?string $selectedSourceServerId = null;
 
+    #[Locked]
     public ?string $selectedSnapshotId = null;
 
     public string $schemaName = '';
@@ -40,6 +45,9 @@ class RestoreModal extends Component
     {
         $this->reset(['selectedSourceServerId', 'selectedSnapshotId', 'schemaName', 'currentStep', 'existingDatabases']);
         $this->targetServer = DatabaseServer::find($targetServerId);
+
+        $this->authorize('restore', $this->targetServer);
+
         $this->currentStep = 1;
 
         $this->showModal = true;
@@ -92,6 +100,8 @@ class RestoreModal extends Component
 
     public function restore(): void
     {
+        $this->authorize('restore', $this->targetServer);
+
         $this->validate([
             'selectedSourceServerId' => 'required',
             'selectedSnapshotId' => 'required',

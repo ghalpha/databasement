@@ -72,20 +72,24 @@
             @scope('actions', $snapshot)
                 <div class="flex gap-2 justify-end">
                     @if($snapshot->job && $snapshot->job->status === 'completed')
-                        <x-button
-                            icon="o-arrow-down-tray"
-                            wire:click="download('{{ $snapshot->id }}')"
-                            spinner
-                            tooltip="{{ __('Download') }}"
-                            class="btn-ghost btn-sm text-info"
-                        />
+                        @can('download', $snapshot)
+                            <x-button
+                                icon="o-arrow-down-tray"
+                                wire:click="download('{{ $snapshot->id }}')"
+                                spinner
+                                tooltip="{{ __('Download') }}"
+                                class="btn-ghost btn-sm text-info"
+                            />
+                        @endcan
                     @endif
-                    <x-button
-                        icon="o-trash"
-                        wire:click="confirmDelete('{{ $snapshot->id }}')"
-                        tooltip="{{ __('Delete') }}"
-                        class="btn-ghost btn-sm text-error"
-                    />
+                    @can('delete', $snapshot)
+                        <x-button
+                            icon="o-trash"
+                            wire:click="confirmDelete('{{ $snapshot->id }}')"
+                            tooltip="{{ __('Delete') }}"
+                            class="btn-ghost btn-sm text-error"
+                        />
+                    @endcan
                 </div>
             @endscope
         </x-table>

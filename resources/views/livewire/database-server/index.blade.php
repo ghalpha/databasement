@@ -6,7 +6,9 @@
         </x-slot:middle>
         <x-slot:actions>
             <x-button label="{{ __('Filters') }}" @click="$wire.drawer = true" responsive icon="o-funnel" class="btn-ghost" />
-            <x-button label="{{ __('Add Server') }}" link="{{ route('database-servers.create') }}" icon="o-plus" class="btn-primary" wire:navigate />
+            @can('create', App\Models\DatabaseServer::class)
+                <x-button label="{{ __('Add Server') }}" link="{{ route('database-servers.create') }}" icon="o-plus" class="btn-primary" wire:navigate />
+            @endcan
         </x-slot:actions>
     </x-header>
 
@@ -60,35 +62,43 @@
 
             @scope('actions', $server)
                 <div class="flex gap-2 justify-end">
-                    @if($server->backup)
+                    @can('backup', $server)
+                        @if($server->backup)
+                            <x-button
+                                icon="o-arrow-down-tray"
+                                wire:click="runBackup('{{ $server->id }}')"
+                                spinner
+                                tooltip="{{ __('Backup Now') }}"
+                                class="btn-ghost btn-sm text-info"
+                            />
+                        @endif
+                    @endcan
+                    @can('restore', $server)
                         <x-button
-                            icon="o-arrow-down-tray"
-                            wire:click="runBackup('{{ $server->id }}')"
+                            icon="o-arrow-up-tray"
+                            wire:click="confirmRestore('{{ $server->id }}')"
                             spinner
-                            tooltip="{{ __('Backup Now') }}"
-                            class="btn-ghost btn-sm text-info"
+                            tooltip="{{ __('Restore') }}"
+                            class="btn-ghost btn-sm text-success"
                         />
-                    @endif
-                    <x-button
-                        icon="o-arrow-up-tray"
-                        wire:click="confirmRestore('{{ $server->id }}')"
-                        spinner
-                        tooltip="{{ __('Restore') }}"
-                        class="btn-ghost btn-sm text-success"
-                    />
-                    <x-button
-                        icon="o-pencil"
-                        link="{{ route('database-servers.edit', $server) }}"
-                        wire:navigate
-                        tooltip="{{ __('Edit') }}"
-                        class="btn-ghost btn-sm"
-                    />
-                    <x-button
-                        icon="o-trash"
-                        wire:click="confirmDelete('{{ $server->id }}')"
-                        tooltip="{{ __('Delete') }}"
-                        class="btn-ghost btn-sm text-error"
-                    />
+                    @endcan
+                    @can('update', $server)
+                        <x-button
+                            icon="o-pencil"
+                            link="{{ route('database-servers.edit', $server) }}"
+                            wire:navigate
+                            tooltip="{{ __('Edit') }}"
+                            class="btn-ghost btn-sm"
+                        />
+                    @endcan
+                    @can('delete', $server)
+                        <x-button
+                            icon="o-trash"
+                            wire:click="confirmDelete('{{ $server->id }}')"
+                            tooltip="{{ __('Delete') }}"
+                            class="btn-ghost btn-sm text-error"
+                        />
+                    @endcan
                 </div>
             @endscope
         </x-table>

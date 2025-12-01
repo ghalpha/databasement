@@ -1,6 +1,8 @@
 <?php
 
+use App\Livewire\Settings\Profile;
 use App\Models\User;
+use Livewire\Livewire;
 use Livewire\Volt\Volt;
 
 test('profile page is displayed', function () {
@@ -14,7 +16,7 @@ test('profile information can be updated', function () {
 
     $this->actingAs($user);
 
-    $response = Volt::test('settings.profile')
+    $response = Livewire::test(Profile::class)
         ->set('name', 'Test User')
         ->set('email', 'test@example.com')
         ->call('updateProfileInformation');
@@ -25,22 +27,22 @@ test('profile information can be updated', function () {
 
     expect($user->name)->toEqual('Test User');
     expect($user->email)->toEqual('test@example.com');
-    expect($user->email_verified_at)->toBeNull();
 });
 
-test('email verification status is unchanged when email address is unchanged', function () {
+test('email stays unchanged when email address is unchanged', function () {
     $user = User::factory()->create();
+    $originalEmail = $user->email;
 
     $this->actingAs($user);
 
-    $response = Volt::test('settings.profile')
+    $response = Livewire::test(Profile::class)
         ->set('name', 'Test User')
-        ->set('email', $user->email)
+        ->set('email', $originalEmail)
         ->call('updateProfileInformation');
 
     $response->assertHasNoErrors();
 
-    expect($user->refresh()->email_verified_at)->not->toBeNull();
+    expect($user->refresh()->email)->toEqual($originalEmail);
 });
 
 test('user can delete their account', function () {

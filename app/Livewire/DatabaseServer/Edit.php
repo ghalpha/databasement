@@ -4,19 +4,26 @@ namespace App\Livewire\DatabaseServer;
 
 use App\Livewire\Forms\DatabaseServerForm;
 use App\Models\DatabaseServer;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Component;
 
 class Edit extends Component
 {
+    use AuthorizesRequests;
+
     public DatabaseServerForm $form;
 
     public function mount(DatabaseServer $server)
     {
+        $this->authorize('update', $server);
+
         $this->form->setServer($server);
     }
 
     public function save()
     {
+        $this->authorize('update', $this->form->server);
+
         if ($this->form->update()) {
             session()->flash('status', 'Database server updated successfully!');
 

@@ -4,6 +4,8 @@ namespace App\Livewire\Snapshot;
 
 use App\Models\Snapshot;
 use App\Services\Backup\Filesystems\FilesystemProvider;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Mary\Traits\Toast;
@@ -11,7 +13,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class Index extends Component
 {
-    use Toast, WithPagination;
+    use AuthorizesRequests, Toast, WithPagination;
 
     public string $search = '';
 
@@ -21,6 +23,7 @@ class Index extends Component
 
     public bool $drawer = false;
 
+    #[Locked]
     public ?string $deleteId = null;
 
     public bool $showDeleteModal = false;
@@ -75,25 +78,36 @@ class Index extends Component
 
     public function confirmDelete(string $id)
     {
+        $snapshot = Snapshot::findOrFail($id);
+
+        $this->authorize('delete', $snapshot);
+
         $this->deleteId = $id;
         $this->showDeleteModal = true;
     }
 
     public function delete()
     {
-        if ($this->deleteId) {
-            $snapshot = Snapshot::findOrFail($this->deleteId);
-            $snapshot->delete();
-            $this->deleteId = null;
-
-            $this->success('Snapshot deleted successfully!', position: 'toast-bottom');
-            $this->showDeleteModal = false;
+        if (! $this->deleteId) {
+            return;
         }
+
+        $snapshot = Snapshot::findOrFail($this->deleteId);
+
+        $this->authorize('delete', $snapshot);
+
+        $snapshot->delete();
+        $this->deleteId = null;
+        $this->showDeleteModal = false;
+
+        $this->success('Snapshot deleted successfully!', position: 'toast-bottom');
     }
 
     public function download(string $id, FilesystemProvider $filesystemProvider): StreamedResponse
     {
         $snapshot = Snapshot::with('volume')->findOrFail($id);
+
+        $this->authorize('download', $snapshot);
 
         try {
             $filesystem = $filesystemProvider->getForVolume($snapshot->volume);

@@ -41,6 +41,20 @@ php artisan test                    # Direct artisan command
 php artisan backup:test             # Direct backup test command
 php artisan backup:test --type=mysql     # Test specific database type only
 ```
+### Test Strategy
+- Focus on testing the behaviors
+- Do not test the internals of the framework or related dependencies
+- Avoid testing implementation details 
+
+#### Mocking Strategy
+
+**DO Mock:**
+- External API services
+- Third-party libraries (AWS SDK, S3 client, etc.)
+
+**DON'T Mock:**
+- Model/ORM methods
+- Simple utility functions
 
 **IMPORTANT**: When modifying backup or restore logic (services in `app/Services/Backup/`), you MUST run `make backup-test` to verify the complete backup and restore workflow works correctly with real MySQL and PostgreSQL databases.
 

@@ -3,13 +3,15 @@
 namespace App\Livewire\Volume;
 
 use App\Models\Volume;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Mary\Traits\Toast;
 
 class Index extends Component
 {
-    use Toast, WithPagination;
+    use AuthorizesRequests, Toast, WithPagination;
 
     public string $search = '';
 
@@ -17,6 +19,7 @@ class Index extends Component
 
     public bool $drawer = false;
 
+    #[Locked]
     public ?string $deleteId = null;
 
     public bool $showDeleteModal = false;
@@ -52,19 +55,29 @@ class Index extends Component
 
     public function confirmDelete(string $id)
     {
+        $volume = Volume::findOrFail($id);
+
+        $this->authorize('delete', $volume);
+
         $this->deleteId = $id;
         $this->showDeleteModal = true;
     }
 
     public function delete()
     {
-        if ($this->deleteId) {
-            Volume::findOrFail($this->deleteId)->delete();
-            $this->deleteId = null;
-
-            $this->success('Volume deleted successfully!', position: 'toast-bottom');
-            $this->showDeleteModal = false;
+        if (! $this->deleteId) {
+            return;
         }
+
+        $volume = Volume::findOrFail($this->deleteId);
+
+        $this->authorize('delete', $volume);
+
+        $volume->delete();
+        $this->deleteId = null;
+        $this->showDeleteModal = false;
+
+        $this->success('Volume deleted successfully!', position: 'toast-bottom');
     }
 
     public function render()

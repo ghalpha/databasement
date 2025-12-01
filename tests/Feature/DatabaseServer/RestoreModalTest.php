@@ -12,7 +12,7 @@ use Livewire\Livewire;
 use function Pest\Laravel\actingAs;
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
+    $this->user = User::factory()->create(['role' => 'admin']);
     actingAs($this->user);
 });
 
@@ -48,7 +48,7 @@ test('modal can be rendered', function () {
     ]);
 
     Livewire::test(RestoreModal::class)
-        ->set('targetServer', $targetServer)
+        ->dispatch('open-restore-modal', targetServerId: $targetServer->id)
         ->assertOk();
 });
 
@@ -66,8 +66,7 @@ test('can navigate through restore wizard steps', function () {
     $snapshot = createSnapshotForServer($sourceServer);
 
     $component = Livewire::test(RestoreModal::class)
-        ->set('targetServer', $targetServer)
-        ->set('showModal', true);
+        ->dispatch('open-restore-modal', targetServerId: $targetServer->id);
 
     // Step 1: Select source server
     $component->assertSet('currentStep', 1)
@@ -100,11 +99,10 @@ test('can queue restore job with valid data', function () {
     $snapshot = createSnapshotForServer($sourceServer, ['database_name' => 'test_db']);
 
     Livewire::test(RestoreModal::class)
-        ->set('targetServer', $targetServer)
-        ->set('selectedSourceServerId', $sourceServer->id)
-        ->set('selectedSnapshotId', $snapshot->id)
+        ->dispatch('open-restore-modal', targetServerId: $targetServer->id)
+        ->call('selectSourceServer', $sourceServer->id)
+        ->call('selectSnapshot', $snapshot->id)
         ->set('schemaName', 'restored_db')
-        ->set('currentStep', 3)
         ->call('restore')
         ->assertDispatched('restore-completed');
 
@@ -131,11 +129,10 @@ test('validates schema name is required', function () {
     $snapshot = createSnapshotForServer($sourceServer);
 
     Livewire::test(RestoreModal::class)
-        ->set('targetServer', $targetServer)
-        ->set('selectedSourceServerId', $sourceServer->id)
-        ->set('selectedSnapshotId', $snapshot->id)
+        ->dispatch('open-restore-modal', targetServerId: $targetServer->id)
+        ->call('selectSourceServer', $sourceServer->id)
+        ->call('selectSnapshot', $snapshot->id)
         ->set('schemaName', '')
-        ->set('currentStep', 3)
         ->call('restore')
         ->assertHasErrors(['schemaName' => 'required']);
 });
@@ -152,11 +149,10 @@ test('validates schema name format', function () {
     $snapshot = createSnapshotForServer($sourceServer);
 
     Livewire::test(RestoreModal::class)
-        ->set('targetServer', $targetServer)
-        ->set('selectedSourceServerId', $sourceServer->id)
-        ->set('selectedSnapshotId', $snapshot->id)
+        ->dispatch('open-restore-modal', targetServerId: $targetServer->id)
+        ->call('selectSourceServer', $sourceServer->id)
+        ->call('selectSnapshot', $snapshot->id)
         ->set('schemaName', 'invalid-name-with-dashes!')
-        ->set('currentStep', 3)
         ->call('restore')
         ->assertHasErrors(['schemaName' => 'regex']);
 });
@@ -181,8 +177,7 @@ test('only shows compatible servers with same database type', function () {
     createSnapshotForServer($postgresServer);
 
     Livewire::test(RestoreModal::class)
-        ->set('targetServer', $targetServer)
-        ->set('showModal', true)
+        ->dispatch('open-restore-modal', targetServerId: $targetServer->id)
         ->assertSee($mysqlServer->name)
         ->assertDontSee($postgresServer->name);
 });
@@ -199,7 +194,7 @@ test('can go back to previous steps', function () {
     $snapshot = createSnapshotForServer($sourceServer);
 
     Livewire::test(RestoreModal::class)
-        ->set('targetServer', $targetServer)
+        ->dispatch('open-restore-modal', targetServerId: $targetServer->id)
         ->call('selectSourceServer', $sourceServer->id)
         ->assertSet('currentStep', 2)
         ->call('previousStep')

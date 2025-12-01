@@ -52,6 +52,7 @@
                 <x-menu-item title="{{ __('Jobs') }}" icon="o-queue-list" link="{{ route('jobs.index') }}" wire:navigate />
                 <x-menu-item title="{{ __('Snapshots') }}" icon="o-camera" link="{{ route('snapshots.index') }}" wire:navigate />
                 <x-menu-item title="{{ __('Volumes') }}" icon="o-circle-stack" link="{{ route('volumes.index') }}" wire:navigate />
+                <x-menu-item title="{{ __('Users') }}" icon="o-users" link="{{ route('users.index') }}" wire:navigate />
             </x-menu>
 
             {{-- USER SECTION AT BOTTOM --}}
