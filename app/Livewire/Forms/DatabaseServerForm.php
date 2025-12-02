@@ -12,35 +12,24 @@ class DatabaseServerForm extends Form
 {
     public ?DatabaseServer $server = null;
 
-    #[Validate('required|string|max:255')]
     public string $name = '';
 
-    #[Validate('required|string|max:255')]
     public string $host = '';
 
-    #[Validate('required|integer|min:1|max:65535')]
     public int $port = 3306;
 
-    #[Validate('required|string|in:mysql,postgresql,mariadb,sqlite')]
     public string $database_type = 'mysql';
 
-    #[Validate('required|string|max:255')]
     public string $username = '';
 
-    #[Validate('required|string|max:255')]
     public string $password = '';
 
-    #[Validate('required|string|max:255')]
     public ?string $database_name = null;
 
-    #[Validate('nullable|string|max:1000')]
     public ?string $description = null;
 
-    // Backup fields
-    #[Validate('required|exists:volumes,id')]
     public string $volume_id = '';
 
-    #[Validate('required|string|in:daily,weekly')]
     public string $recurrence = 'daily';
 
     public ?string $connectionTestMessage = null;
@@ -71,9 +60,25 @@ class DatabaseServerForm extends Form
         }
     }
 
+    public function formValidate()
+    {
+        return $this->validate([
+            'name' => 'required|string|max:255',
+            'host' => 'required|string|max:255',
+            'port' => 'required|integer|min:1|max:65535',
+            'database_type' => 'required|string|in:mysql,postgresql,mariadb,sqlite',
+            'username' => 'required|string|max:255',
+            'password' => 'nullable',
+            'database_name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'volume_id' => 'required|exists:volumes,id',
+            'recurrence' => 'required|string|in:'.implode(',', Backup::RECURRENCE_TYPES),
+        ]);
+    }
+
     public function store(): bool
     {
-        $validated = $this->validate();
+        $validated = $this->formValidate();
 
         $this->testConnection();
         if (! $this->connectionTestSuccess) {
@@ -98,18 +103,7 @@ class DatabaseServerForm extends Form
 
     public function update(): bool
     {
-        $validated = $this->validate([
-            'name' => 'required|string|max:255',
-            'host' => 'required|string|max:255',
-            'port' => 'required|integer|min:1|max:65535',
-            'database_type' => 'required|string|in:mysql,postgresql,mariadb,sqlite',
-            'username' => 'required|string|max:255',
-            'password' => 'nullable',
-            'database_name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'volume_id' => 'required|exists:volumes,id',
-            'recurrence' => 'required|string|in:daily,weekly',
-        ]);
+        $validated = $this->formValidate();
 
         $this->testConnection();
         if (! $this->connectionTestSuccess) {

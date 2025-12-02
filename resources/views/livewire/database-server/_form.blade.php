@@ -8,10 +8,10 @@ $databaseTypes = [
     ['id' => 'sqlite', 'name' => 'SQLite'],
 ];
 
-$recurrenceOptions = [
-    ['id' => 'daily', 'name' => __('Daily')],
-    ['id' => 'weekly', 'name' => __('Weekly')],
-];
+$recurrenceOptions = collect(App\Models\Backup::RECURRENCE_TYPES)->map(fn($type) => [
+    'id' => $type,
+    'name' => __(Str::ucfirst($type)),
+])->toArray();
 
 $volumes = \App\Models\Volume::orderBy('name')->get()->map(fn($v) => [
     'id' => $v->id,

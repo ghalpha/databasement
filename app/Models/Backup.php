@@ -35,6 +35,15 @@ class Backup extends Model
 {
     use HasUlids;
 
+    public const string RECURRENCE_DAILY = 'daily';
+
+    public const string RECURRENCE_WEEKLY = 'weekly';
+
+    public const array RECURRENCE_TYPES = [
+        self::RECURRENCE_DAILY,
+        self::RECURRENCE_WEEKLY,
+    ];
+
     protected $fillable = [
         'database_server_id',
         'volume_id',
