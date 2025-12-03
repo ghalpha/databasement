@@ -24,3 +24,7 @@ yarn-error.log
 /.zed
 _ide_helper.php
 docker/*/data
+
+**/caddy
+frankenphp
+frankenphp-worker.php

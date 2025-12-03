@@ -5,11 +5,8 @@ services:
     user: 1000:1000
     volumes:
       - .:/app
-    environment:
-      WEB_DOCUMENT_ROOT: /app/public
-      SERVER_NAME: :8080
     ports:
-      - "8081:8080"
+      - "8001:8000"
 
   mysql:
     image: mysql:8.0

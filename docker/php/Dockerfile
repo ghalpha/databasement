@@ -17,6 +17,7 @@ RUN install-php-extensions \
     pdo_mysql \
     pdo_pgsql \
     intl \
+    pcntl \
     opcache
 
 COPY --from=composer/composer:latest-bin /composer /usr/bin/composer
@@ -40,7 +41,7 @@ WORKDIR /app
 USER 1000
 
 ENV WEB_DOCUMENT_ROOT=/app/public
-ENV SERVER_NAME=":8080"
+ENV SERVER_NAME=":8000"
 
 ENTRYPOINT ["/usr/bin/supervisord"]
 CMD ["-c", "/etc/supervisor/conf.d/supervisord.conf"]
