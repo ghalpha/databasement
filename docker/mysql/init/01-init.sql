@@ -32,7 +32,3 @@ CREATE TABLE IF NOT EXISTS products (
 INSERT INTO products (name, description, price, stock) VALUES
     ('Laptop', 'High-performance laptop for developers', 1299.99, 15),
     ('Mouse', 'Wireless ergonomic mouse', 29.99, 50);
-
--- Grant privileges to admin user
-GRANT ALL PRIVILEGES ON testdb.* TO 'admin'@'%';
-FLUSH PRIVILEGES;
