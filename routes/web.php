@@ -4,6 +4,12 @@ use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
+// Health check routes (public)
+Route::get('/health', [\App\Http\Controllers\Web\HealthCheckController::class, 'up'])
+    ->name('health.up');
+Route::get('/health/debug', [\App\Http\Controllers\Web\HealthCheckController::class, 'debug'])
+    ->name('health.debug');
+
 // Home - redirect based on auth status and user count
 Route::get('/', function () {
     if (auth()->check()) {
