@@ -1,4 +1,6 @@
 suite: pvc tests
+chart:
+  version: 0.1.0
 templates:
   - templates/pvc.yaml
 tests:

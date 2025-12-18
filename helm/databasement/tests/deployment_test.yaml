@@ -1,4 +1,6 @@
 suite: deployment tests
+chart:
+  version: 0.1.0
 templates:
   - templates/deployment.yaml
 tests:

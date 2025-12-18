@@ -4,7 +4,7 @@
 replicaCount: 1
 
 image:
-  repository: david-crty/databasement
+  repository: davidcrty/databasement
   pullPolicy: IfNotPresent
   tag: "latest"
 

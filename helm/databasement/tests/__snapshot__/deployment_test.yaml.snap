@@ -7,7 +7,6 @@ should render deployment with default values:
         app.kubernetes.io/instance: RELEASE-NAME
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: databasement
-        app.kubernetes.io/version: 1.0.0
         helm.sh/chart: databasement-0.1.0
       name: RELEASE-NAME-databasement
     spec:
@@ -22,7 +21,6 @@ should render deployment with default values:
             app.kubernetes.io/instance: RELEASE-NAME
             app.kubernetes.io/managed-by: Helm
             app.kubernetes.io/name: databasement
-            app.kubernetes.io/version: 1.0.0
             helm.sh/chart: databasement-0.1.0
         spec:
           containers:
@@ -51,7 +49,7 @@ should render deployment with default values:
                   value: database
                 - name: CACHE_STORE
                   value: database
-              image: david-crty/databasement:latest
+              image: davidcrty/databasement:latest
               imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 3
@@ -109,7 +107,6 @@ should render deployment with mysql database:
         app.kubernetes.io/instance: RELEASE-NAME
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: databasement
-        app.kubernetes.io/version: 1.0.0
         helm.sh/chart: databasement-0.1.0
       name: RELEASE-NAME-databasement
     spec:
@@ -124,7 +121,6 @@ should render deployment with mysql database:
             app.kubernetes.io/instance: RELEASE-NAME
             app.kubernetes.io/managed-by: Helm
             app.kubernetes.io/name: databasement
-            app.kubernetes.io/version: 1.0.0
             helm.sh/chart: databasement-0.1.0
         spec:
           containers:
@@ -164,7 +160,7 @@ should render deployment with mysql database:
                   value: database
                 - name: CACHE_STORE
                   value: database
-              image: david-crty/databasement:latest
+              image: davidcrty/databasement:latest
               imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 3
