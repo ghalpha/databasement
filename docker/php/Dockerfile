@@ -42,6 +42,7 @@ USER 1000
 
 ENV WEB_DOCUMENT_ROOT=/app/public
 ENV SERVER_NAME=":8000"
+ENV MYSQL_CLI_TYPE="mariadb"
 
-ENTRYPOINT ["/usr/bin/supervisord"]
-CMD ["-c", "/etc/supervisor/conf.d/supervisord.conf"]
+ENTRYPOINT [""]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
