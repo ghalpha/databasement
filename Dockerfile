@@ -18,13 +18,19 @@ RUN npm run build
 
 FROM davidcrty/databasement-php:latest
 
-USER root
-RUN cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini
-RUN cp /usr/local/etc/php/php-custom-production.ini /usr/local/etc/php/conf.d/php-custom-production.ini
-
 USER 1000
 ENV APP_ENV="production"
 ENV APP_DEBUG="false"
 
 COPY --from=backend-build /app /app
 COPY --from=frontend-build /app/public/build /app/public/build
+
+USER root
+
+RUN cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini
+RUN cp /usr/local/etc/php/php-custom-production.ini /usr/local/etc/php/conf.d/php-custom-production.ini
+
+# fix permission for openshift
+RUN chmod -R 777 /app/storage /app/bootstrap/cache
+
+USER 1000

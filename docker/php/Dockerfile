@@ -33,6 +33,7 @@ ENV USER_ID=1000
 ENV USER=application
 
 RUN adduser -u ${USER_ID} -D -h /home/${USER} ${USER} && \
+    setcap -r /usr/local/bin/frankenphp && \
     chown -R ${USER}:${USER} /data/caddy && chown -R ${USER}:${USER} /config/caddy
 
 RUN mkdir -p /app && chown -R ${USER}:${USER} /app && chmod -R 775 /app
