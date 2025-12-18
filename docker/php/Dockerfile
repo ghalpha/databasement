@@ -34,7 +34,7 @@ ENV USER=application
 
 RUN adduser -u ${USER_ID} -D -h /home/${USER} ${USER} && \
     setcap -r /usr/local/bin/frankenphp && \
-    chown -R ${USER}:${USER} /data/caddy && chown -R ${USER}:${USER} /config/caddy
+    chown -R ${USER}:${USER} /data/caddy && chmod -R 777 /config/caddy
 
 RUN mkdir -p /app && chown -R ${USER}:${USER} /app && chmod -R 775 /app
 COPY start-frankenphp.sh /usr/local/bin/
