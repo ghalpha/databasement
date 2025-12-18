@@ -38,10 +38,18 @@ class WaitForDatabase extends Command
 
                 return 0;
             } catch (\Exception $e) {
-                if ($this->option('allow-missing-db') && (str_contains($e->getMessage(), 'Unknown database') || str_contains($e->getMessage(), '1049'))) {
-                    $this->info('Database connection established! (Database not created yet).');
+                if ($this->option('allow-missing-db')) {
+                    // if driver is sqlite, then the database does not exist yet
+                    if (DB::connection()->getDriverName() === 'sqlite' && str_contains($e->getMessage(), 'Database file at path')) {
+                        $this->info('Sqlite database file not found. (Database not created yet).');
 
-                    return 0;
+                        return 0;
+                    }
+                    if (str_contains($e->getMessage(), 'Unknown database')) {
+                        $this->info('Database connection established! (Database not created yet).');
+
+                        return 0;
+                    }
                 }
 
                 $this->warn("Database not ready yet. Retrying in {$retryDelay} seconds... ({$i}/{$maxRetries})");
