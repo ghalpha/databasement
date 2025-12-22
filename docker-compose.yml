@@ -1,10 +1,12 @@
 services:
-  php:
+  app:
+    image: davidcrty/databasement-php
     build:
       context: docker/php
     user: 1000:1000
     volumes:
       - .:/app
+      - app-data:/data
     ports:
       - "8000:8000"
 
@@ -42,3 +44,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+volumes:
+  app-data:
