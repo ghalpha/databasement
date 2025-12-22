@@ -333,7 +333,7 @@ test('run executes backup for each database when backup_all_databases is enabled
     foreach ($snapshots as $snapshot) {
         $snapshot->refresh();
         expect($snapshot->job->status)->toBe('completed')
-            ->and($snapshot->path)->not->toBeEmpty()
+            ->and($snapshot->storage_uri)->not->toBeEmpty()
             ->and($snapshot->file_size)->toBeGreaterThan(0);
     }
 });

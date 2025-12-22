@@ -67,7 +67,7 @@ class BackupJobFactory
             'database_server_id' => $server->id,
             'backup_id' => $server->backup->id,
             'volume_id' => $server->backup->volume_id,
-            'path' => '',
+            'storage_uri' => '',
             'file_size' => 0,
             'checksum' => null,
             'started_at' => now(),

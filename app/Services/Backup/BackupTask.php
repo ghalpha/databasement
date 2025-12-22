@@ -5,6 +5,7 @@ namespace App\Services\Backup;
 use App\Models\BackupJob;
 use App\Models\DatabaseServer;
 use App\Models\Snapshot;
+use App\Models\Volume;
 use App\Services\Backup\Databases\MysqlDatabase;
 use App\Services\Backup\Databases\PostgresqlDatabase;
 use App\Services\Backup\Filesystems\FilesystemProvider;
@@ -65,16 +66,20 @@ class BackupTask
             $job->log("Transferring backup ({$humanFileSize}) to volume: {$snapshot->volume->name}", 'info', [
                 'volume_type' => $snapshot->volume->type,
             ]);
-            $destinationPath = $this->generateBackupFilename($databaseServer, $databaseName);
+            $filename = $this->generateBackupFilename($databaseServer, $databaseName);
             $transferStart = microtime(true);
             $this->filesystemProvider->transfer(
                 $snapshot->volume,
                 $archive,
-                $destinationPath
+                $filename
             );
             $transferDuration = Formatters::humanDuration((int) round((microtime(true) - $transferStart) * 1000));
+
+            // Build the storage URI based on volume type
+            $storageUri = $this->buildStorageUri($snapshot->volume, $filename);
+
             $job->log('Transfer completed successfully in '.$transferDuration, 'success', [
-                'destination_path' => $destinationPath,
+                'storage_uri' => $storageUri,
                 'duration' => $transferDuration,
             ]);
 
@@ -83,12 +88,12 @@ class BackupTask
             $job->log('Backup completed successfully', 'success', [
                 'file_size' => $humanFileSize,
                 'checksum' => substr($checksum, 0, 16).'...',
-                'destination' => $destinationPath,
+                'storage_uri' => $storageUri,
             ]);
 
             // Update snapshot with success
             $snapshot->update([
-                'path' => $destinationPath,
+                'storage_uri' => $storageUri,
                 'file_size' => $fileSize,
                 'checksum' => $checksum,
             ]);
@@ -139,6 +144,28 @@ class BackupTask
         $sanitizedDbName = preg_replace('/[^a-zA-Z0-9-_]/', '-', $databaseName);
 
         return sprintf('%s-%s-%s.sql.gz', $serverName, $sanitizedDbName, $timestamp);
+    }
+
+    /**
+     * Build a storage URI for the given volume and filename
+     */
+    private function buildStorageUri(Volume $volume, string $filename): string
+    {
+        $config = $volume->config;
+
+        if ($volume->type === 's3') {
+            $bucket = $config['bucket'] ?? '';
+            $prefix = $config['prefix'] ?? '';
+            $path = $prefix ? rtrim($prefix, '/').'/'.$filename : $filename;
+
+            return Snapshot::buildStorageUri('s3', $path, $bucket);
+        }
+
+        // Local filesystem
+        $basePath = $config['path'] ?? '';
+        $fullPath = rtrim($basePath, '/').'/'.$filename;
+
+        return Snapshot::buildStorageUri('local', $fullPath);
     }
 
     private function configureDatabaseInterface(DatabaseServer $databaseServer, string $databaseName): void

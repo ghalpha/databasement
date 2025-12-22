@@ -23,7 +23,7 @@ class SnapshotResource extends JsonResource
             'database_type' => $this->database_type,
             'database_host' => $this->database_host,
             'database_port' => $this->database_port,
-            'path' => $this->path,
+            'storage_uri' => $this->storage_uri,
             'file_size' => $this->file_size,
             'file_size_human' => $this->getHumanFileSize(),
             'checksum' => $this->checksum,

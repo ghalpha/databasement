@@ -72,10 +72,10 @@ class RestoreTask
 
             // Download snapshot from volume
             $job->log("Downloading snapshot from volume: {$snapshot->volume->name}", 'info', [
-                'snapshot_path' => $snapshot->path,
+                'storage_uri' => $snapshot->storage_uri,
                 'volume_type' => $snapshot->volume->type,
             ]);
-            $compressedFile = $workingDirectory.'/'.basename($snapshot->path);
+            $compressedFile = $workingDirectory.'/'.$snapshot->getFilename();
             $this->filesystemProvider->download($snapshot, $compressedFile);
             $job->log('Snapshot downloaded successfully', 'success', [
                 'file_size' => filesize($compressedFile),

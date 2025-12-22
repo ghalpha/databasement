@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $database_server_id
  * @property string $backup_id
  * @property string $volume_id
- * @property string $path
+ * @property string $storage_uri
  * @property int $file_size
  * @property string|null $checksum
  * @property \Illuminate\Support\Carbon $started_at
@@ -50,7 +50,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Snapshot whereFileSize($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Snapshot whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Snapshot whereMethod($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Snapshot wherePath($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Snapshot whereStorageUri($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Snapshot whereStartedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Snapshot whereTriggeredByUserId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Snapshot whereUpdatedAt($value)
@@ -67,7 +67,7 @@ class Snapshot extends Model
         'database_server_id',
         'backup_id',
         'volume_id',
-        'path',
+        'storage_uri',
         'file_size',
         'checksum',
         'started_at',
@@ -144,6 +144,86 @@ class Snapshot extends Model
     }
 
     /**
+     * Get the storage type from the URI (e.g., 's3', 'local')
+     */
+    public function getStorageType(): string
+    {
+        return self::parseStorageUri($this->storage_uri)['type'];
+    }
+
+    /**
+     * Get the storage path from the URI (without the scheme)
+     */
+    public function getStoragePath(): string
+    {
+        return self::parseStorageUri($this->storage_uri)['path'];
+    }
+
+    /**
+     * Get the filename from the storage URI
+     */
+    public function getFilename(): string
+    {
+        return basename($this->getStoragePath());
+    }
+
+    /**
+     * Parse a storage URI into its components
+     *
+     * @return array{type: string, path: string, bucket: string|null}
+     */
+    public static function parseStorageUri(string $uri): array
+    {
+        if (str_starts_with($uri, 's3://')) {
+            // s3://bucket/path/to/file.sql.gz
+            $withoutScheme = substr($uri, 5); // Remove 's3://'
+            $slashPos = strpos($withoutScheme, '/');
+
+            if ($slashPos === false) {
+                return [
+                    'type' => 's3',
+                    'bucket' => $withoutScheme,
+                    'path' => '',
+                ];
+            }
+
+            return [
+                'type' => 's3',
+                'bucket' => substr($withoutScheme, 0, $slashPos),
+                'path' => substr($withoutScheme, $slashPos + 1),
+            ];
+        }
+
+        if (str_starts_with($uri, 'local://')) {
+            // local:///absolute/path/to/file.sql.gz
+            return [
+                'type' => 'local',
+                'bucket' => null,
+                'path' => substr($uri, 8), // Remove 'local://'
+            ];
+        }
+
+        // Fallback for legacy paths (shouldn't happen after migration)
+        return [
+            'type' => 'unknown',
+            'bucket' => null,
+            'path' => $uri,
+        ];
+    }
+
+    /**
+     * Build a storage URI from components
+     */
+    public static function buildStorageUri(string $type, string $path, ?string $bucket = null): string
+    {
+        return match ($type) {
+            's3' => "s3://{$bucket}/{$path}",
+            'local' => "local://{$path}",
+            default => throw new \InvalidArgumentException("Unknown storage type: {$type}"),
+        };
+    }
+
+    /**
      * Delete the backup file from the volume
      */
     public function deleteBackupFile(): bool
@@ -153,9 +233,12 @@ class Snapshot extends Model
             $filesystemProvider = app(\App\Services\Backup\Filesystems\FilesystemProvider::class);
             $filesystem = $filesystemProvider->getForVolume($this->volume);
 
+            // Get the path component from the URI for filesystem operations
+            $storagePath = $this->getStoragePath();
+
             // Delete the file if it exists
-            if ($filesystem->fileExists($this->path)) {
-                $filesystem->delete($this->path);
+            if ($filesystem->fileExists($storagePath)) {
+                $filesystem->delete($storagePath);
 
                 return true;
             }
@@ -165,7 +248,7 @@ class Snapshot extends Model
             // Log the error but don't throw to prevent deletion cascade failure
             logger()->error('Failed to delete backup file for snapshot', [
                 'snapshot_id' => $this->id,
-                'path' => $this->path,
+                'storage_uri' => $this->storage_uri,
                 'error' => $e->getMessage(),
             ]);
 

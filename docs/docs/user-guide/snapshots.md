@@ -20,11 +20,33 @@ Navigate to **Snapshots** to see all your backup snapshots. The list shows:
 
 Click on a snapshot to see detailed information:
 
-- **Full path** in the storage volume
+- **Storage URI** - The full location of the backup file
 - **Creation time** and duration
 - **Database type** and version
 - **Compression ratio**
 - **Checksum** for integrity verification
+
+## Storage URI Format
+
+Each snapshot stores its location as a URI that identifies both the storage type and the full path to the backup file. This makes snapshots self-describing and portable.
+
+### Local Storage
+
+```
+local:///data/backups/MyServer-mydb-2025-12-22-164400.sql.gz
+```
+
+Format: `local://<absolute-path>`
+
+### S3 Storage
+
+```
+s3://my-bucket/backups/MyServer-mydb-2025-12-22-164400.sql.gz
+```
+
+Format: `s3://<bucket>/<path>`
+
+The URI contains the complete location, making it easy to identify where each backup is stored without needing to look up volume configuration.
 
 ## Restoring a Snapshot
 

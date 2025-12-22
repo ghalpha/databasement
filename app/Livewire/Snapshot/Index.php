@@ -4,13 +4,13 @@ namespace App\Livewire\Snapshot;
 
 use App\Models\Snapshot;
 use App\Queries\SnapshotQuery;
-use App\Services\Backup\Filesystems\FilesystemProvider;
+use App\Services\Backup\Filesystems\Awss3Filesystem;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Mary\Traits\Toast;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class Index extends Component
 {
@@ -104,41 +104,60 @@ class Index extends Component
         $this->success('Snapshot deleted successfully!', position: 'toast-bottom');
     }
 
-    public function download(string $id, FilesystemProvider $filesystemProvider): StreamedResponse
+    public function download(string $id): ?BinaryFileResponse
     {
         $snapshot = Snapshot::with('volume')->findOrFail($id);
 
         $this->authorize('download', $snapshot);
 
         try {
-            $filesystem = $filesystemProvider->getForVolume($snapshot->volume);
+            $storageType = $snapshot->getStorageType();
+            $storagePath = $snapshot->getStoragePath();
 
-            if (! $filesystem->fileExists($snapshot->path)) {
-                $this->error('Backup file not found.', position: 'toast-bottom');
-
-                return response()->streamDownload(function () {}, 'error.txt');
+            if ($storageType === 'local') {
+                return $this->downloadLocal($snapshot, $storagePath);
             }
 
-            $stream = $filesystem->readStream($snapshot->path);
+            if ($storageType === 's3') {
+                $this->downloadS3($snapshot, $storagePath);
 
-            return response()->streamDownload(function () use ($stream) {
-                // Read and output in 1MB chunks to avoid memory exhaustion
-                while (! feof($stream)) {
-                    echo fread($stream, 1024 * 1024); // 1MB chunks
-                    flush();
-                }
-                if (is_resource($stream)) {
-                    fclose($stream);
-                }
-            }, basename($snapshot->path), [
-                'Content-Type' => 'application/gzip',
-                'Content-Length' => $snapshot->file_size,
-            ]);
+                return null;
+            }
+
+            $this->error('Unsupported storage type.', position: 'toast-bottom');
+
+            return null;
         } catch (\Exception $e) {
             $this->error('Failed to download backup: '.$e->getMessage(), position: 'toast-bottom');
 
-            return response()->streamDownload(function () {}, 'error.txt');
+            return null;
         }
+    }
+
+    private function downloadLocal(Snapshot $snapshot, string $storagePath): ?BinaryFileResponse
+    {
+        if (! file_exists($storagePath)) {
+            $this->error('Backup file not found.', position: 'toast-bottom');
+
+            return null;
+        }
+
+        return response()->file($storagePath, [
+            'Content-Type' => 'application/gzip',
+            'Content-Disposition' => 'attachment; filename="'.$snapshot->getFilename().'"',
+        ]);
+    }
+
+    private function downloadS3(Snapshot $snapshot, string $storagePath): void
+    {
+        $s3Filesystem = app(Awss3Filesystem::class);
+        $presignedUrl = $s3Filesystem->getPresignedUrl(
+            $snapshot->volume->config,
+            $storagePath,
+            expiresInMinutes: 15
+        );
+
+        $this->redirect($presignedUrl);
     }
 
     public function render()
