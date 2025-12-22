@@ -1,99 +1,52 @@
 <?php
 
+use App\Models\Volume;
+use App\Services\Backup\Filesystems\FilesystemProvider;
 use App\Services\VolumeConnectionTester;
+use League\Flysystem\Filesystem;
+use League\Flysystem\UnableToWriteFile;
 
 beforeEach(function () {
-    $this->tester = new VolumeConnectionTester;
+    $this->tester = app(VolumeConnectionTester::class);
 });
 
 describe('local volume connection testing', function () {
-    test('testConnection returns success for valid writable directory', function () {
-        // Create a temp directory for testing
+    test('returns success for valid writable directory', function () {
         $tempDir = sys_get_temp_dir().'/volume-test-'.uniqid();
         mkdir($tempDir, 0777, true);
 
         try {
-            $result = $this->tester->test([
+            $volume = new Volume([
+                'name' => 'test-volume',
                 'type' => 'local',
-                'path' => $tempDir,
+                'config' => ['path' => $tempDir],
             ]);
+
+            $result = $this->tester->test($volume);
 
             expect($result['success'])->toBeTrue()
                 ->and($result['message'])->toContain('Connection successful');
         } finally {
-            // Cleanup
             if (is_dir($tempDir)) {
                 rmdir($tempDir);
             }
         }
     });
 
-    test('testConnection creates directory if it does not exist', function () {
-        $tempDir = sys_get_temp_dir().'/volume-test-new-'.uniqid();
-
-        try {
-            // Directory should not exist yet
-            expect(is_dir($tempDir))->toBeFalse();
-
-            $result = $this->tester->test([
-                'type' => 'local',
-                'path' => $tempDir,
-            ]);
-
-            // Directory should now exist and test should succeed
-            expect($result['success'])->toBeTrue()
-                ->and(is_dir($tempDir))->toBeTrue()
-                ->and($result['message'])->toContain('Connection successful');
-        } finally {
-            // Cleanup
-            if (is_dir($tempDir)) {
-                rmdir($tempDir);
-            }
-        }
-    });
-
-    test('testConnection returns error when directory cannot be created', function () {
-        // Use a path that cannot be created (no permission to create in root)
-        $result = $this->tester->test([
-            'type' => 'local',
-            'path' => '/nonexistent-root-'.uniqid().'/subdir',
-        ]);
-
-        expect($result['success'])->toBeFalse()
-            ->and($result['message'])->toContain('Failed to create directory');
-    });
-
-    test('testConnection returns error when path is empty', function () {
-        $result = $this->tester->test([
-            'type' => 'local',
-            'path' => '',
-        ]);
-
-        expect($result['success'])->toBeFalse()
-            ->and($result['message'])->toContain('Path is required');
-    });
-
-    test('testConnection returns error for unsupported volume type', function () {
-        $result = $this->tester->test([
-            'type' => 'unknown',
-        ]);
-
-        expect($result['success'])->toBeFalse()
-            ->and($result['message'])->toContain('Unsupported volume type');
-    });
-
-    test('testConnection creates and removes test file during validation', function () {
+    test('creates and removes test file during validation', function () {
         $tempDir = sys_get_temp_dir().'/volume-test-'.uniqid();
         mkdir($tempDir, 0777, true);
 
         try {
-            // Before test, directory should be empty
             expect(glob($tempDir.'/*'))->toBeEmpty();
 
-            $result = $this->tester->test([
+            $volume = new Volume([
+                'name' => 'test-volume',
                 'type' => 'local',
-                'path' => $tempDir,
+                'config' => ['path' => $tempDir],
             ]);
+
+            $result = $this->tester->test($volume);
 
             // After test, directory should still be empty (test file cleaned up)
             expect(glob($tempDir.'/*'))->toBeEmpty()
@@ -104,34 +57,131 @@ describe('local volume connection testing', function () {
             }
         }
     });
+
+    test('returns error when directory does not exist and cannot be created', function () {
+        $volume = new Volume([
+            'name' => 'test-volume',
+            'type' => 'local',
+            'config' => ['path' => '/nonexistent-root-'.uniqid().'/subdir'],
+        ]);
+
+        $result = $this->tester->test($volume);
+
+        expect($result['success'])->toBeFalse();
+    });
+
+    test('returns error for unsupported volume type', function () {
+        $volume = new Volume([
+            'name' => 'test-volume',
+            'type' => 'unknown',
+            'config' => [],
+        ]);
+
+        $result = $this->tester->test($volume);
+
+        expect($result['success'])->toBeFalse();
+    });
 });
 
 describe('S3 volume connection testing', function () {
-    test('testConnection returns error when bucket is empty', function () {
-        $result = $this->tester->test([
+    test('returns success when S3 filesystem write/read/delete succeeds', function () {
+        $volume = new Volume([
+            'name' => 'test-s3-volume',
             'type' => 's3',
-            'bucket' => '',
+            'config' => [
+                'bucket' => 'test-bucket',
+                'prefix' => '',
+            ],
         ]);
 
-        expect($result['success'])->toBeFalse()
-            ->and($result['message'])->toContain('Bucket name is required');
+        // Capture the content written so we can return it on read
+        $capturedContent = null;
+        $mockFilesystem = Mockery::mock(Filesystem::class);
+        $mockFilesystem->shouldReceive('write')
+            ->once()
+            ->withArgs(function ($filename, $content) use (&$capturedContent) {
+                $capturedContent = $content;
+
+                return str_starts_with($filename, '.databasement-test-');
+            });
+        $mockFilesystem->shouldReceive('read')
+            ->once()
+            ->andReturnUsing(function () use (&$capturedContent) {
+                return $capturedContent;
+            });
+        $mockFilesystem->shouldReceive('delete')->once();
+
+        // Mock FilesystemProvider to return our mock filesystem
+        $mockProvider = Mockery::mock(FilesystemProvider::class);
+        $mockProvider->shouldReceive('getForVolume')
+            ->once()
+            ->with(Mockery::on(fn ($v) => $v->type === 's3' && $v->config['bucket'] === 'test-bucket'))
+            ->andReturn($mockFilesystem);
+
+        $tester = new VolumeConnectionTester($mockProvider);
+        $result = $tester->test($volume);
+
+        expect($result['success'])->toBeTrue()
+            ->and($result['message'])->toContain('Connection successful');
     });
 
-    test('testConnection returns error when AWS credentials are not configured', function () {
-        // Ensure no env credentials
-        $originalKey = env('AWS_ACCESS_KEY_ID');
-        $originalSecret = env('AWS_SECRET_ACCESS_KEY');
-
-        // Clear credentials by not providing them in config
-        $result = $this->tester->test([
+    test('returns error when S3 filesystem write fails', function () {
+        $volume = new Volume([
+            'name' => 'test-s3-volume',
             'type' => 's3',
-            'bucket' => 'test-bucket',
-            'key' => '',
-            'secret' => '',
+            'config' => [
+                'bucket' => 'non-existent-bucket',
+                'prefix' => '',
+            ],
         ]);
 
-        // This test will fail if AWS credentials are actually configured in environment
-        // In that case, it will try to connect to S3, which is fine for a real test
-        expect($result['success'])->toBeFalse();
+        // Mock the filesystem to throw an exception
+        $mockFilesystem = Mockery::mock(Filesystem::class);
+        $mockFilesystem->shouldReceive('write')
+            ->once()
+            ->andThrow(UnableToWriteFile::atLocation('.databasement-test-123', 'Bucket does not exist'));
+
+        // Mock FilesystemProvider
+        $mockProvider = Mockery::mock(FilesystemProvider::class);
+        $mockProvider->shouldReceive('getForVolume')
+            ->once()
+            ->andReturn($mockFilesystem);
+
+        $tester = new VolumeConnectionTester($mockProvider);
+        $result = $tester->test($volume);
+
+        expect($result['success'])->toBeFalse()
+            ->and($result['message'])->toContain('Bucket does not exist');
+    });
+
+    test('returns error when S3 filesystem read returns different content', function () {
+        $volume = new Volume([
+            'name' => 'test-s3-volume',
+            'type' => 's3',
+            'config' => [
+                'bucket' => 'test-bucket',
+                'prefix' => '',
+            ],
+        ]);
+
+        // Mock the filesystem to return different content
+        $mockFilesystem = Mockery::mock(Filesystem::class);
+        $mockFilesystem->shouldReceive('write')->once();
+        $mockFilesystem->shouldReceive('read')
+            ->once()
+            ->andReturn('different-content');
+        $mockFilesystem->shouldReceive('delete')->once();
+
+        // Mock FilesystemProvider
+        $mockProvider = Mockery::mock(FilesystemProvider::class);
+        $mockProvider->shouldReceive('getForVolume')
+            ->once()
+            ->andReturn($mockFilesystem);
+
+        $tester = new VolumeConnectionTester($mockProvider);
+        $result = $tester->test($volume);
+
+        expect($result['success'])->toBeFalse()
+            ->and($result['message'])->toContain('Failed to verify test file content');
     });
 });

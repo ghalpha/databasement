@@ -8,6 +8,8 @@ use League\Flysystem\Filesystem;
 
 class Awss3Filesystem implements FilesystemInterface
 {
+    private ?S3Client $client = null;
+
     public function handles(?string $type): bool
     {
         return in_array(strtolower($type ?? ''), ['s3', 'awss3']);
@@ -15,7 +17,7 @@ class Awss3Filesystem implements FilesystemInterface
 
     public function get(array $config): Filesystem
     {
-        $client = $this->createClient($config);
+        $client = $this->getClient();
 
         // Support both 'root' (from config/backup.php) and 'prefix' (from Volume database)
         $root = $config['root'] ?? $config['prefix'] ?? '';
@@ -28,7 +30,7 @@ class Awss3Filesystem implements FilesystemInterface
      */
     public function getPresignedUrl(array $config, string $path, int $expiresInMinutes = 60): string
     {
-        $client = $this->createClient($config);
+        $client = $this->getClient();
 
         $command = $client->getCommand('GetObject', [
             'Bucket' => $config['bucket'],
@@ -40,17 +42,41 @@ class Awss3Filesystem implements FilesystemInterface
         return (string) $request->getUri();
     }
 
-    private function createClient(array $config): S3Client
+    private function getClient(): S3Client
     {
-        return new S3Client([
-            'credentials' => [
-                'key' => $config['key'],
-                'secret' => $config['secret'],
-            ],
-            'region' => $config['region'],
-            'version' => $config['version'] ?? 'latest',
-            'endpoint' => $config['endpoint'] ?? null,
-            'use_path_style_endpoint' => $config['use_path_style_endpoint'] ?? false,
-        ]);
+        if ($this->client !== null) {
+            return $this->client;
+        }
+
+        $this->client = $this->createClient();
+
+        return $this->client;
+    }
+
+    private function createClient(): S3Client
+    {
+        $awsConfig = config('services.aws');
+        $clientConfig = ['version' => 'latest'];
+
+        if (! empty($awsConfig['key']) && ! empty($awsConfig['secret'])) {
+            $clientConfig['credentials'] = [
+                'key' => $awsConfig['key'],
+                'secret' => $awsConfig['secret'],
+            ];
+        }
+
+        if (! empty($awsConfig['region'])) {
+            $clientConfig['region'] = $awsConfig['region'];
+        }
+
+        if (! empty($awsConfig['endpoint'])) {
+            $clientConfig['endpoint'] = $awsConfig['endpoint'];
+        }
+
+        if ($awsConfig['use_path_style_endpoint']) {
+            $clientConfig['use_path_style_endpoint'] = true;
+        }
+
+        return new S3Client($clientConfig);
     }
 }

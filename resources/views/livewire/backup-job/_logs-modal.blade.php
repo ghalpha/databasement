@@ -84,7 +84,7 @@
                                                                 <code class="text-primary">{{ Str::limit($log['command'], 80) }}</code>
                                                             </div>
                                                         @else
-                                                            {{ $log['message'] }}
+                                                            {{ Str::limit($log['message'], 80) }}
                                                         @endif
                                                     </span>
                                                     @if($log['type'] !== 'command')
@@ -140,12 +140,21 @@
                                                         </div>
                                                     @endif
                                                 @else
+                                                    <!-- Full Message -->
                                                     <div>
-                                                        <div class="text-xs text-base-content/50 mb-1">{{ __('Context') }}</div>
-                                                        <div class="bg-base-300 p-3 rounded font-mono text-xs overflow-x-auto">
-                                                            <pre class="text-base-content/80">{{ json_encode($log['context'], JSON_PRETTY_PRINT) }}</pre>
+                                                        <div class="text-xs text-base-content/50 mb-1">{{ __('Message') }}</div>
+                                                        <div class="bg-base-300 p-3 rounded text-sm overflow-x-auto {{ $isError ? 'text-error' : '' }}">
+                                                            {{ $log['message'] }}
                                                         </div>
                                                     </div>
+                                                    @if(isset($log['context']) && !empty($log['context']))
+                                                        <div>
+                                                            <div class="text-xs text-base-content/50 mb-1">{{ __('Context') }}</div>
+                                                            <div class="bg-base-300 p-3 rounded font-mono text-xs overflow-x-auto">
+                                                                <pre class="text-base-content/80">{{ json_encode($log['context'], JSON_PRETTY_PRINT) }}</pre>
+                                                            </div>
+                                                        </div>
+                                                    @endif
                                                 @endif
                                             </div>
                                         </x-slot:content>

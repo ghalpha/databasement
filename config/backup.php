@@ -11,21 +11,7 @@ return [
     |
     */
 
-    'filesystems' => [
-        'local' => [
-            'type' => 'local',
-            'root' => env('BACKUP_LOCAL_ROOT', '/tmp/backups'),
-        ],
-
-        's3' => [
-            'type' => 's3',
-            'root' => env('BACKUP_S3_ROOT', '/backups'),
-            'bucket' => env('BACKUP_S3_BUCKET'),
-            'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
-            'key' => env('AWS_ACCESS_KEY_ID'),
-            'secret' => env('AWS_SECRET_ACCESS_KEY'),
-        ],
-    ],
+    'tmp_folder' => env('BACKUP_TMP_FOLDER', "/tmp/backups"),
 
     /*
     |--------------------------------------------------------------------------

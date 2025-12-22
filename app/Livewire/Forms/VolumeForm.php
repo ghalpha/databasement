@@ -134,12 +134,14 @@ class VolumeForm extends Form
         /** @var VolumeConnectionTester $tester */
         $tester = app(VolumeConnectionTester::class);
 
-        $result = $tester->test([
+        // Create a temporary Volume model for testing (not persisted)
+        $testVolume = new Volume([
+            'name' => $this->name ?: 'test-volume',
             'type' => $this->type,
-            'path' => $this->path,
-            'bucket' => $this->bucket,
-            'prefix' => $this->prefix,
+            'config' => $this->buildConfig(),
         ]);
+
+        $result = $tester->test($testVolume);
 
         $this->connectionTestSuccess = $result['success'];
         $this->connectionTestMessage = $result['message'];
