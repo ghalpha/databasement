@@ -9,6 +9,14 @@ services:
       - app-data:/data
     ports:
       - "8000:8000"
+    environment:
+      AWS_ACCESS_KEY_ID: localstack
+      AWS_SECRET_ACCESS_KEY: localstack
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ENDPOINT: http://localstack:4566
+      AWS_USE_PATH_STYLE_ENDPOINT: "true"
+    depends_on:
+      - localstack
 
   worker:
     image: davidcrty/databasement-php
@@ -20,8 +28,15 @@ services:
       - app-data:/data
     command: sh -c "php artisan db:wait && php artisan queue:work --queue=backups,default --tries=3 --timeout=3600 --sleep=3 --max-jobs=1000"
     restart: unless-stopped
+    environment:
+      AWS_ACCESS_KEY_ID: localstack
+      AWS_SECRET_ACCESS_KEY: localstack
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ENDPOINT: http://localstack:4566
+      AWS_USE_PATH_STYLE_ENDPOINT: "true"
     depends_on:
       - app
+      - localstack
 
   mysql:
     image: mysql:8.0
@@ -58,5 +73,18 @@ services:
       timeout: 5s
       retries: 5
 
+  localstack:
+    image: localstack/localstack:latest
+    container_name: databasement-localstack
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: s3
+      DEBUG: 0
+      DATA_DIR: /var/lib/localstack/data
+    volumes:
+      - localstack-data:/var/lib/localstack
+
 volumes:
   app-data:
+  localstack-data:
