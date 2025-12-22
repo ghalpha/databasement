@@ -34,10 +34,14 @@ class BackupTask
         // Configure shell processor to log to job
         $this->setLogger($job);
 
-        $workingDirectory = config('backup.tmp_folder');
+        $workingDirectory = rtrim(config('backup.tmp_folder'), '/');
         $workingFile = $workingDirectory.'/'.$snapshot->id.'.sql';
 
         try {
+            if (! is_dir($workingDirectory)) {
+                mkdir($workingDirectory, 0755, true);
+            }
+
             // Mark as running
             $job->markRunning();
 
