@@ -20,10 +20,11 @@ tests:
     asserts:
       - matchSnapshot: {}
 
-  - it: should include worker sidecar container when enabled
+  - it: should include worker sidecar container when enabled (default sidecar mode)
     set:
       worker:
         enabled: true
+        separateDeployment: false
         command: "php artisan queue:work --queue=backups"
     asserts:
       - lengthEqual:
@@ -42,10 +43,21 @@ tests:
           path: spec.template.spec.containers
           count: 1
 
-  - it: should use custom worker command
+  - it: should not include worker sidecar when separateDeployment is true
     set:
       worker:
         enabled: true
+        separateDeployment: true
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 1
+
+  - it: should use custom worker command in sidecar mode
+    set:
+      worker:
+        enabled: true
+        separateDeployment: false
         command: "php artisan queue:work --queue=custom --tries=5"
     asserts:
       - equal:
@@ -55,10 +67,11 @@ tests:
           path: spec.template.spec.containers[1].command
           value: ["sh", "-c", "php artisan db:wait && php artisan queue:work --queue=custom --tries=5"]
 
-  - it: should apply worker resources
+  - it: should apply worker resources in sidecar mode
     set:
       worker:
         enabled: true
+        separateDeployment: false
         resources:
           limits:
             cpu: 500m
@@ -76,3 +89,140 @@ tests:
       - equal:
           path: spec.template.spec.containers[1].resources.limits.memory
           value: 512Mi
+
+  # Separate worker deployment tests
+  - it: should render separate worker deployment when separateDeployment is true
+    set:
+      worker:
+        enabled: true
+        separateDeployment: true
+        replicaCount: 2
+    asserts:
+      - hasDocuments:
+          count: 2
+      - documentIndex: 1
+        equal:
+          path: metadata.name
+          value: RELEASE-NAME-databasement-worker
+      - documentIndex: 1
+        equal:
+          path: spec.replicas
+          value: 2
+
+  - it: should not render separate worker deployment when separateDeployment is false
+    set:
+      worker:
+        enabled: true
+        separateDeployment: false
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should have worker component label in separate deployment
+    set:
+      worker:
+        enabled: true
+        separateDeployment: true
+    asserts:
+      - documentIndex: 1
+        equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: worker
+      - documentIndex: 1
+        equal:
+          path: spec.selector.matchLabels["app.kubernetes.io/component"]
+          value: worker
+
+  - it: should use custom worker command in separate deployment
+    set:
+      worker:
+        enabled: true
+        separateDeployment: true
+        command: "php artisan queue:work --queue=custom --tries=5"
+    asserts:
+      - documentIndex: 1
+        equal:
+          path: spec.template.spec.containers[0].command
+          value: ["sh", "-c", "php artisan db:wait && php artisan queue:work --queue=custom --tries=5"]
+
+  - it: should apply worker resources in separate deployment
+    set:
+      worker:
+        enabled: true
+        separateDeployment: true
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+    asserts:
+      - documentIndex: 1
+        equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: 500m
+      - documentIndex: 1
+        equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 512Mi
+
+  # Extra volumes tests
+  - it: should add extra volumes and mounts to app container
+    set:
+      extraVolumes:
+        - name: config
+          configMap:
+            name: my-config
+      extraVolumeMounts:
+        - name: config
+          mountPath: /etc/config
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: config
+            configMap:
+              name: my-config
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: config
+            mountPath: /etc/config
+
+  - it: should mount extra volumes in worker sidecar
+    set:
+      worker:
+        enabled: true
+        separateDeployment: false
+      extraVolumeMounts:
+        - name: secrets
+          mountPath: /etc/secrets
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].volumeMounts
+          content:
+            name: secrets
+            mountPath: /etc/secrets
+
+  - it: should mount extra volumes in separate worker deployment
+    set:
+      worker:
+        enabled: true
+        separateDeployment: true
+      extraVolumes:
+        - name: cache
+          emptyDir: {}
+      extraVolumeMounts:
+        - name: cache
+          mountPath: /tmp/cache
+    asserts:
+      - documentIndex: 1
+        contains:
+          path: spec.template.spec.volumes
+          content:
+            name: cache
+            emptyDir: {}
+      - documentIndex: 1
+        contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: cache
+            mountPath: /tmp/cache

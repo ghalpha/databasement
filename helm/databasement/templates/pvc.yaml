@@ -11,7 +11,11 @@ metadata:
   {{- end }}
 spec:
   accessModes:
+    {{- if and .Values.worker.enabled .Values.worker.separateDeployment }}
+    - ReadWriteMany
+    {{- else }}
     {{- toYaml .Values.persistence.accessModes | nindent 4 }}
+    {{- end }}
   {{- if .Values.persistence.storageClass }}
   storageClassName: {{ .Values.persistence.storageClass | quote }}
   {{- end }}

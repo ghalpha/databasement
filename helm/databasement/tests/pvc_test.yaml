@@ -15,3 +15,23 @@ tests:
     asserts:
       - hasDocuments:
           count: 0
+
+  - it: should use ReadWriteOnce by default (sidecar mode)
+    set:
+      worker:
+        enabled: true
+        separateDeployment: false
+    asserts:
+      - equal:
+          path: spec.accessModes[0]
+          value: ReadWriteOnce
+
+  - it: should use ReadWriteMany when worker separate deployment is enabled
+    set:
+      worker:
+        enabled: true
+        separateDeployment: true
+    asserts:
+      - equal:
+          path: spec.accessModes[0]
+          value: ReadWriteMany

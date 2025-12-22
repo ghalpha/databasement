@@ -28,6 +28,23 @@ app:
   secretKeys:
     appKey: APP_KEY
 
+# Worker configuration
+worker:
+  enabled: true
+  # Deploy worker as separate deployment (requires ReadWriteMany storage or external database)
+  # When false, worker runs as sidecar container in the same pod as the app
+  separateDeployment: false
+  replicaCount: 1
+  command: "php artisan queue:work --queue=backups,default --tries=3 --timeout=3600 --sleep=3 --max-jobs=1000"
+  resources:
+    limits:
+      cpu: 300m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+
 # Database configuration
 database:
   # Database driver: sqlite, mysql, pgsql
@@ -77,6 +94,9 @@ persistence:
   annotations: {}
   path: /data
 
+extraVolumeMounts: {}
+extraVolumes: {}
+
 # Liveness and readiness probes
 livenessProbe:
   httpGet:
@@ -125,14 +145,3 @@ tolerations: []
 
 affinity: {}
 
-# Worker configuration (sidecar container in same pod)
-worker:
-  enabled: true
-  command: "php artisan queue:work --queue=backups,default --tries=3 --timeout=3600 --sleep=3 --max-jobs=1000"
-  resources:
-    limits:
-      cpu: 300m
-      memory: 256Mi
-    requests:
-      cpu: 50m
-      memory: 128Mi
