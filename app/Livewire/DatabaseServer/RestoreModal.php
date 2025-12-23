@@ -11,11 +11,12 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Mary\Traits\Toast;
 
 class RestoreModal extends Component
 {
-    use AuthorizesRequests, Toast;
+    use AuthorizesRequests, Toast, WithPagination;
 
     #[Locked]
     public ?DatabaseServer $targetServer = null;
@@ -34,6 +35,30 @@ class RestoreModal extends Component
 
     public bool $showModal = false;
 
+    public string $snapshotSearch = '';
+
+    public function updatedSnapshotSearch(): void
+    {
+        $this->resetPage('snapshots');
+    }
+
+    public function getFilteredDatabasesProperty(): array
+    {
+        if (empty($this->schemaName)) {
+            return $this->existingDatabases;
+        }
+
+        return collect($this->existingDatabases)
+            ->filter(fn ($db) => str_contains(strtolower($db), strtolower($this->schemaName)))
+            ->values()
+            ->all();
+    }
+
+    public function selectDatabase(string $database): void
+    {
+        $this->schemaName = $database;
+    }
+
     public function mount(?string $targetServerId = null)
     {
         if ($targetServerId) {
@@ -44,7 +69,8 @@ class RestoreModal extends Component
     #[On('open-restore-modal')]
     public function openModal(string $targetServerId): void
     {
-        $this->reset(['selectedSourceServerId', 'selectedSnapshotId', 'schemaName', 'currentStep', 'existingDatabases']);
+        $this->reset(['selectedSourceServerId', 'selectedSnapshotId', 'schemaName', 'currentStep', 'existingDatabases', 'snapshotSearch']);
+        $this->resetPage('snapshots');
         $this->targetServer = DatabaseServer::find($targetServerId);
 
         $this->authorize('restore', $this->targetServer);
@@ -58,6 +84,8 @@ class RestoreModal extends Component
     {
         $this->selectedSourceServerId = $serverId;
         $this->selectedSnapshotId = null;
+        $this->snapshotSearch = '';
+        $this->resetPage('snapshots');
         $this->currentStep = 2;
     }
 
@@ -173,6 +201,23 @@ class RestoreModal extends Component
         }
 
         return Snapshot::find($this->selectedSnapshotId);
+    }
+
+    public function getPaginatedSnapshotsProperty()
+    {
+        if (! $this->selectedSourceServerId) {
+            return null;
+        }
+
+        return Snapshot::query()
+            ->where('database_server_id', $this->selectedSourceServerId)
+            ->whereHas('job', fn ($q) => $q->where('status', 'completed'))
+            ->when($this->snapshotSearch, function ($query) {
+                $query->where('database_name', 'like', '%'.$this->snapshotSearch.'%');
+            })
+            ->with('job')
+            ->orderBy('created_at', 'desc')
+            ->paginate(10, pageName: 'snapshots');
     }
 
     public function render()

@@ -25,7 +25,7 @@
                         <p class="opacity-70">{{ __('No compatible database servers with snapshots found.') }}</p>
                     </div>
                 @else
-                    <div class="space-y-2 max-h-96 overflow-y-auto">
+                    <div class="space-y-2 max-h-96 overflow-y-auto" wire:loading.class="opacity-50 pointer-events-none" wire:target="selectSourceServer">
                         @foreach($this->compatibleServers as $server)
                             <div
                                 wire:click="selectSourceServer('{{ $server->id }}')"
@@ -44,7 +44,8 @@
                                             <div class="text-sm opacity-50 mt-1">{{ $server->description }}</div>
                                         @endif
                                     </div>
-                                    <div class="ml-4 text-sm opacity-50">
+                                    <div class="ml-4 text-sm opacity-50 flex items-center gap-2">
+                                        <x-loading wire:loading wire:target="selectSourceServer('{{ $server->id }}')" class="loading-xs" />
                                         {{ $server->snapshots->count() }} {{ Str::plural('snapshot', $server->snapshots->count()) }}
                                     </div>
                                 </div>
@@ -58,38 +59,52 @@
         <!-- Step 2: Select Snapshot -->
         @if($currentStep === 2)
             <div class="space-y-4">
-                <p class="text-sm opacity-70">
-                    {{ __('Select a snapshot to restore from') }} <strong>{{ $this->selectedSourceServer?->name }}</strong>.
-                </p>
+                <div class="flex items-center justify-between gap-4">
+                    <p class="text-sm opacity-70">
+                        {{ __('Select a snapshot to restore from') }} <strong>{{ $this->selectedSourceServer?->name }}</strong>.
+                    </p>
+                    <x-input
+                        wire:model.live.debounce.300ms="snapshotSearch"
+                        placeholder="{{ __('Search database...') }}"
+                        icon="o-magnifying-glass"
+                        clearable
+                        class="w-64"
+                    />
+                </div>
 
-                @if($this->selectedSourceServer?->snapshots->isEmpty())
+                @if($this->paginatedSnapshots->isEmpty())
                     <div class="p-4 text-center border rounded-lg border-base-300">
-                        <p class="opacity-70">{{ __('No completed snapshots found.') }}</p>
+                        <p class="opacity-70">
+                            @if($snapshotSearch)
+                                {{ __('No snapshots found matching ":search".', ['search' => $snapshotSearch]) }}
+                            @else
+                                {{ __('No completed snapshots found.') }}
+                            @endif
+                        </p>
                     </div>
                 @else
-                    <div class="space-y-2 max-h-96 overflow-y-auto">
-                        @foreach($this->selectedSourceServer->snapshots as $snapshot)
+                    <div class="space-y-1 max-h-80 overflow-y-auto" wire:loading.class="opacity-50 pointer-events-none" wire:target="selectSnapshot">
+                        @foreach($this->paginatedSnapshots as $snapshot)
                             <div
                                 wire:click="selectSnapshot('{{ $snapshot->id }}')"
-                                class="p-4 border rounded-lg cursor-pointer hover:bg-base-200 border-base-300 {{ $selectedSnapshotId === $snapshot->id ? 'border-primary bg-primary/10' : '' }}"
+                                class="px-3 py-2 border rounded-lg cursor-pointer hover:bg-base-200 border-base-300 {{ $selectedSnapshotId === $snapshot->id ? 'border-primary bg-primary/10' : '' }}"
                             >
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1">
-                                        <div class="font-semibold">{{ $snapshot->database_name }}</div>
-                                        <div class="text-sm opacity-70">
-                                            {{ __('Created:') }} {{ \App\Support\Formatters::humanDate($snapshot->created_at) }} ({{ $snapshot->created_at->diffForHumans() }})
-                                        </div>
-                                        <div class="text-sm opacity-50 mt-1">
-                                            {{ __('Size:') }} {{ $snapshot->getHumanFileSize() }}
-                                            @if($snapshot->job?->getDurationMs())
-                                                &bull; {{ __('Duration:') }} {{ $snapshot->job->getHumanDuration() }}
-                                            @endif
-                                        </div>
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="font-medium text-sm">{{ $snapshot->database_name }}</div>
+                                    <div class="text-xs opacity-60 whitespace-nowrap flex items-center gap-2">
+                                        <x-loading wire:loading wire:target="selectSnapshot('{{ $snapshot->id }}')" class="loading-xs" />
+                                        {{ $snapshot->created_at->diffForHumans() }} &bull; {{ $snapshot->getHumanFileSize() }}
                                     </div>
                                 </div>
                             </div>
                         @endforeach
                     </div>
+
+                    @if($this->paginatedSnapshots->hasPages())
+                        <div class="pt-2">
+                            {{ $this->paginatedSnapshots->links() }}
+                        </div>
+                    @endif
                 @endif
 
                 <div class="flex justify-start mt-4">
@@ -103,24 +118,50 @@
         <!-- Step 3: Enter Destination Schema -->
         @if($currentStep === 3)
             <div class="space-y-4">
-                <x-input
-                    wire:model.live="schemaName"
-                    label="{{ __('Destination Database Name') }}"
-                    placeholder="{{ __('Enter database name') }}"
-                    list="existing-databases"
-                />
+                <div x-data="{ open: false }" @click.outside="open = false" class="relative">
+                    <x-input
+                        wire:model.live.debounce.200ms="schemaName"
+                        label="{{ __('Destination Database Name') }}"
+                        placeholder="{{ __('Type or select database name...') }}"
+                        @focus="open = true"
+                        @keydown.escape="open = false"
+                        autocomplete="off"
+                    />
+                    @error('schemaName')
+                        <p class="text-error text-sm mt-1">{{ $message }}</p>
+                    @enderror
 
-                @if(!empty($existingDatabases))
-                    <datalist id="existing-databases">
-                        @foreach($existingDatabases as $db)
-                            <option value="{{ $db }}">
-                        @endforeach
-                    </datalist>
+                    <!-- Dropdown suggestions -->
+                    @if(count($this->filteredDatabases) > 0)
+                        <div
+                            x-show="open"
+                            x-transition:enter="transition ease-out duration-100"
+                            x-transition:enter-start="opacity-0 scale-95"
+                            x-transition:enter-end="opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-75"
+                            x-transition:leave-start="opacity-100 scale-100"
+                            x-transition:leave-end="opacity-0 scale-95"
+                            class="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-48 overflow-y-auto"
+                        >
+                            @foreach($this->filteredDatabases as $database)
+                                <div
+                                    wire:click="selectDatabase('{{ $database }}')"
+                                    @click="open = false"
+                                    class="px-3 py-2 cursor-pointer hover:bg-base-200 text-sm {{ $schemaName === $database ? 'bg-primary/10 font-medium' : '' }}"
+                                >
+                                    {{ $database }}
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+
+                @if(in_array($schemaName, $existingDatabases))
+                    <x-alert class="alert-warning" icon="o-exclamation-triangle">
+                        The database <x-badge class="badge-error badge-dash" :value="$schemaName" /> already exists.<br>
+                        {{ __('It will be overwritten if you continue.') }}
+                    </x-alert>
                 @endif
-
-                <x-alert class="alert-warning" icon="o-exclamation-triangle">
-                    {{ __('If the database already exists, it will be deleted and replaced with the snapshot data.') }}
-                </x-alert>
 
                 @if($this->selectedSnapshot)
                     <div class="p-4 border rounded-lg bg-base-200 border-base-300">
