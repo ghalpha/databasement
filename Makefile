@@ -47,9 +47,6 @@ test-filter: ## Run tests with filter (usage: make test-filter FILTER=DatabaseSe
 test-coverage: ## Run tests with coverage
 	$(PHP_ARTISAN) test --coverage
 
-backup-test: ## Run end-to-end backup and restore tests (mysql + postgres)
-	$(PHP_ARTISAN) backup:test
-
 ##@ Code Quality
 
 lint-check: ## Check code style with Laravel Pint

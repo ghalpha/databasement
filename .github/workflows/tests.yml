@@ -7,6 +7,34 @@ jobs:
     runs-on: ubuntu-latest
     environment: Testing
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: testdb
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: root
+          POSTGRES_PASSWORD: root
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -17,12 +45,18 @@ jobs:
           php-version: 8.4
           tools: composer:v2
           coverage: pcov
+          extensions: pdo, pdo_mysql, pdo_pgsql
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mysql-client postgresql-client
 
       - name: Install Node Dependencies
         run: npm i
@@ -40,7 +74,15 @@ jobs:
         run: npm run build
 
       - name: Run Tests
-        run: php artisan test --coverage-text --coverage-clover=coverage.xml
+        env:
+          MYSQL_CLI_TYPE: mysql
+          DB_HOST: 127.0.0.1
+          BACKUP_TEST_MYSQL_HOST: 127.0.0.1
+          BACKUP_TEST_POSTGRES_HOST: 127.0.0.1
+        run: |
+          php artisan optimize
+          php artisan migrate --force
+          php artisan test --coverage-text --coverage-clover=coverage.xml
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
