@@ -13,3 +13,6 @@ Schedule::command('backups:run daily')->dailyAt('02:00');
 
 // Run weekly backups every Sunday at 3:00 AM
 Schedule::command('backups:run weekly')->weeklyOn(0, '03:00');
+
+// Cleanup expired snapshots every day at 3:00 AM
+Schedule::command('snapshots:cleanup')->dailyAt('03:00');

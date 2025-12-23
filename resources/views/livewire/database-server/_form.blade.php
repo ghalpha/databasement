@@ -202,6 +202,16 @@ $volumes = \App\Models\Volume::orderBy('name')->get()->map(fn($v) => [
                 :options="$recurrenceOptions"
                 required
             />
+
+            <x-input
+                wire:model="form.retention_days"
+                label="{{ __('Retention Period (days)') }}"
+                placeholder="{{ __('e.g., 30') }}"
+                hint="{{ __('Snapshots older than this will be automatically deleted. Leave empty to keep all snapshots.') }}"
+                type="number"
+                min="1"
+                max="35"
+            />
         </div>
     @endif
 

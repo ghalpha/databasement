@@ -35,6 +35,8 @@ class DatabaseServerForm extends Form
 
     public string $recurrence = 'daily';
 
+    public ?int $retention_days = 14;
+
     public ?string $connectionTestMessage = null;
 
     public bool $connectionTestSuccess = false;
@@ -66,6 +68,7 @@ class DatabaseServerForm extends Form
             $backup = $server->backup;
             $this->volume_id = $backup->volume_id;
             $this->recurrence = $backup->recurrence;
+            $this->retention_days = $backup->retention_days;
         }
 
         // Mark connection as already tested for existing servers
@@ -92,6 +95,7 @@ class DatabaseServerForm extends Form
             'description' => 'nullable|string|max:1000',
             'volume_id' => 'required|exists:volumes,id',
             'recurrence' => 'required|string|in:'.implode(',', Backup::RECURRENCE_TYPES),
+            'retention_days' => 'nullable|integer|min:1|max:35',
         ]);
     }
 
@@ -105,12 +109,13 @@ class DatabaseServerForm extends Form
         }
 
         // Extract backup data
-        /** @var array{volume_id: string, recurrence: string} */
+        /** @var array{volume_id: string, recurrence: string, retention_days: int|null} $backupData */
         $backupData = [
             'volume_id' => $validated['volume_id'],
             'recurrence' => $validated['recurrence'],
+            'retention_days' => $validated['retention_days'] ?? null,
         ];
-        unset($validated['volume_id'], $validated['recurrence']);
+        unset($validated['volume_id'], $validated['recurrence'], $validated['retention_days']);
 
         // Create database server
         $server = DatabaseServer::create($validated);
@@ -132,12 +137,13 @@ class DatabaseServerForm extends Form
         }
 
         // Extract backup data
-        /** @var array{volume_id: string, recurrence: string} */
+        /** @var array{volume_id: string, recurrence: string, retention_days: int|null} $backupData */
         $backupData = [
             'volume_id' => $validated['volume_id'],
             'recurrence' => $validated['recurrence'],
+            'retention_days' => $validated['retention_days'] ?? null,
         ];
-        unset($validated['volume_id'], $validated['recurrence']);
+        unset($validated['volume_id'], $validated['recurrence'], $validated['retention_days']);
 
         // Only update password if a new one is provided
         if (empty($validated['password'])) {

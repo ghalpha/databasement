@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
  * @property string $database_server_id
  * @property string $volume_id
  * @property string $recurrence
+ * @property int|null $retention_days
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read DatabaseServer $databaseServer
@@ -29,6 +30,7 @@ use Illuminate\Support\Carbon;
  * @method static Builder<static>|Backup whereDatabaseServerId($value)
  * @method static Builder<static>|Backup whereId($value)
  * @method static Builder<static>|Backup whereRecurrence($value)
+ * @method static Builder<static>|Backup whereRetentionDays($value)
  * @method static Builder<static>|Backup whereUpdatedAt($value)
  * @method static Builder<static>|Backup whereVolumeId($value)
  *
@@ -51,6 +53,7 @@ class Backup extends Model
         'database_server_id',
         'volume_id',
         'recurrence',
+        'retention_days',
     ];
 
     /**
