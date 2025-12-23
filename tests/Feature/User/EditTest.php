@@ -91,7 +91,6 @@ test('can change admin to non-admin when multiple admins exist', function () {
     expect($anotherAdmin->role)->toBe('member');
 });
 
-
 test('can promote user to admin', function () {
     actingAs($this->admin);
 

@@ -57,4 +57,3 @@ test('admin can create user with valid data', function () {
     expect($user->invitation_token)->not->toBeNull();
     expect($user->password)->toBeNull();
 });
-

@@ -63,4 +63,3 @@ test('can create database server with valid data', function () {
         'retention_days' => 14,
     ]);
 });
-

@@ -125,7 +125,6 @@ test('can queue restore job with valid data', function () {
     expect($pushedJob->restoreId)->toBe($restore->id);
 });
 
-
 test('only shows compatible servers with same database type', function () {
     $targetServer = DatabaseServer::factory()->create([
         'database_type' => 'mysql',
