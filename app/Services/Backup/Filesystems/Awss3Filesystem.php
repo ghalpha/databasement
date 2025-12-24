@@ -2,7 +2,10 @@
 
 namespace App\Services\Backup\Filesystems;
 
+use Aws\Credentials\AssumeRoleCredentialProvider;
+use Aws\Credentials\CredentialProvider;
 use Aws\S3\S3Client;
+use Aws\Sts\StsClient;
 use League\Flysystem\AwsS3V3\AwsS3V3Adapter;
 use League\Flysystem\Filesystem;
 
@@ -57,28 +60,64 @@ class Awss3Filesystem implements FilesystemInterface
 
     private function createClient(): S3Client
     {
-        $awsConfig = config('services.aws');
-        $clientConfig = ['version' => 'latest'];
+        /** @var array<string, mixed> $awsConfig */
+        $awsConfig = config('aws');
 
-        if (! empty($awsConfig['key']) && ! empty($awsConfig['secret'])) {
-            $clientConfig['credentials'] = [
-                'key' => $awsConfig['key'],
-                'secret' => $awsConfig['secret'],
-            ];
+        $clientConfig = [
+            'version' => 'latest',
+            'region' => $awsConfig['region'],
+        ];
+
+        if (! empty($awsConfig['s3_profile'])) {
+            $clientConfig['profile'] = $awsConfig['s3_profile'];
         }
 
-        if (! empty($awsConfig['region'])) {
-            $clientConfig['region'] = $awsConfig['region'];
+        // Use IAM role assumption if role_arn is configured
+        if (! empty($awsConfig['role_arn'])) {
+            $clientConfig['credentials'] = $this->createAssumeRoleCredentials($awsConfig);
         }
 
-        if (! empty($awsConfig['endpoint'])) {
-            $clientConfig['endpoint'] = $awsConfig['endpoint'];
+        if (! empty($awsConfig['s3_endpoint'])) {
+            $clientConfig['endpoint'] = $awsConfig['s3_endpoint'];
         }
 
-        if ($awsConfig['use_path_style_endpoint']) {
+        if (! empty($awsConfig['use_path_style_endpoint'])) {
             $clientConfig['use_path_style_endpoint'] = true;
         }
 
         return new S3Client($clientConfig);
+    }
+
+    /**
+     * Create credentials provider using IAM role assumption via STS
+     *
+     * @param  array<string, mixed>  $awsConfig
+     */
+    private function createAssumeRoleCredentials(array $awsConfig): callable
+    {
+        $stsConfig = [
+            'version' => 'latest',
+            'region' => $awsConfig['region'],
+        ];
+
+        if (! empty($awsConfig['sts_profile'])) {
+            $stsConfig['profile'] = $awsConfig['sts_profile'];
+        }
+
+        if (! empty($awsConfig['sts_endpoint'])) {
+            $stsConfig['endpoint'] = $awsConfig['sts_endpoint'];
+        }
+
+        $stsClient = new StsClient($stsConfig);
+
+        $assumeRoleProvider = new AssumeRoleCredentialProvider([
+            'client' => $stsClient,
+            'assume_role_params' => [
+                'RoleArn' => $awsConfig['role_arn'],
+                'RoleSessionName' => $awsConfig['role_session_name'],
+            ],
+        ]);
+
+        return CredentialProvider::memoize($assumeRoleProvider);
     }
 }
