@@ -153,6 +153,47 @@ class BackupJob extends Model
     }
 
     /**
+     * Start a command log entry (before execution begins)
+     * Returns the index of the created log entry for later updates
+     */
+    public function startCommandLog(string $command): int
+    {
+        $logs = $this->logs ?? [];
+
+        $logs[] = [
+            'timestamp' => now()->toIso8601String(),
+            'type' => 'command',
+            'command' => $command,
+            'status' => 'running',
+            'output' => null,
+            'exit_code' => null,
+            'duration_ms' => null,
+        ];
+
+        $this->update(['logs' => $logs]);
+
+        return count($logs) - 1;
+    }
+
+    /**
+     * Update an existing command log entry
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function updateCommandLog(int $index, array $data): void
+    {
+        $logs = $this->logs ?? [];
+
+        if (! isset($logs[$index])) {
+            return;
+        }
+
+        $logs[$index] = array_merge($logs[$index], $data);
+
+        $this->update(['logs' => $logs]);
+    }
+
+    /**
      * Add a log entry
      *
      * @param  array<string, mixed>|null  $context
