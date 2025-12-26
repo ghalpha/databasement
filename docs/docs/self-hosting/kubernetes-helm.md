@@ -46,7 +46,10 @@ ingress:
   enabled: true
   className: nginx
   host: backup.yourdomain.com
-  tlsSecretName: databasement-tls  # Optional: for HTTPS
+  # For HTTPS using cert-manager:
+  # tlsSecretName: databasement-tls
+  # annotations:  # Optional: for HTTPS
+  #   cert-manager.io/cluster-issuer: letsencrypt-prod
 ```
 
 #### Production Configuration (External Database)
@@ -54,10 +57,7 @@ ingress:
 For production, we recommend using MySQL or PostgreSQL instead of SQLite:
 
 ```yaml title="values.yaml"
-app:
-  debug: false
-  url: https://backup.yourdomain.com
-  key: "base64:your-generated-key-here"
+# ... other app config
 
 database:
   connection: mysql  # or pgsql
@@ -66,58 +66,7 @@ database:
   name: databasement
   username: databasement
   password: your-secure-password
-
-ingress:
-  enabled: true
-  className: nginx
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-  host: backup.yourdomain.com
-  tlsSecretName: databasement-tls
 ```
-
-## Worker Configuration
-
-By default, the Helm chart deploys a worker as a sidecar container alongside the main application in the same pod. This worker processes backup and restore jobs from the queue.
-
-```yaml title="values.yaml"
-worker:
-  enabled: true  # Set to false to disable the worker
-  separateDeployment: false  # Set to true for separate deployment
-  replicaCount: 1  # Only used when separateDeployment is true
-  command: "php artisan queue:work --queue=backups,default --tries=3 --timeout=3600 --sleep=3 --max-jobs=1000"
-  resources:
-    limits:
-      cpu: 300m
-      memory: 256Mi
-    requests:
-      cpu: 50m
-      memory: 128Mi
-```
-
-### Separate Worker Deployment
-
-For production environments where you need independent scaling of workers, you can deploy the worker as a separate Deployment:
-
-```yaml title="values.yaml"
-worker:
-  enabled: true
-  separateDeployment: true
-  replicaCount: 3  # Scale workers independently
-
-database:
-  connection: mysql  # External database recommended
-  host: your-mysql-host.example.com
-  # ... other database config
-```
-
-:::caution
-When using `separateDeployment: true`, the PVC access mode is automatically set to `ReadWriteMany`. Ensure your storage class supports this access mode, or use an external database (MySQL/PostgreSQL) instead of SQLite.
-:::
-
-:::note
-Explore the full [`values.yaml`](https://github.com/david-crty/databasement/blob/main/helm/databasement/values.yaml) on GitHub to see all available configuration options.
-:::
 
 ### 4. Install the Chart
 

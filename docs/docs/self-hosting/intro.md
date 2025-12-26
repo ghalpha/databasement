@@ -12,9 +12,9 @@ Databasement is a web application for managing database server backups. It allow
 
 We provide guides to deploy Databasement using:
 
-- [**Docker**](guides/docker) - Single container deployment (recommended for most users)
-- [**Docker Compose**](guides/docker-compose) - Multi-container setup with external database
-- [**Kubernetes + Helm**](guides/kubernetes-helm) - For Kubernetes clusters
+- [**Docker**](docker) - Single container deployment (recommended for most users)
+- [**Docker Compose**](docker-compose) - Multi-container setup with external database
+- [**Kubernetes + Helm**](kubernetes-helm) - For Kubernetes clusters
 
 ## Requirements
 
@@ -42,7 +42,7 @@ docker run -d \
 Then open http://localhost:8000 in your browser.
 
 :::note
-This quick start uses SQLite for the application database. For production deployments, see the [Docker guide](guides/docker) for recommended configurations.
+This quick start uses SQLite for the application database. For production deployments, see the [Docker guide](docker) for recommended configurations.
 :::
 
 ## Support

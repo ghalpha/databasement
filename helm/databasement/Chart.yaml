@@ -2,7 +2,8 @@ apiVersion: v2
 name: databasement
 description: A Helm chart for Databasement - Database backup management application
 type: application
-version: 0.1.6
+version: 0.1.7
+appVersion: "0.1.7"
 keywords:
   - database
   - backup
@@ -14,3 +15,7 @@ sources:
   - https://github.com/David-Crty/databasement
 maintainers:
   - name: David-Crty
+    email: david_courtey@yahoo.com
+annotations:
+  artifacthub.io/license: MIT
+  artifacthub.io/readme: README.md

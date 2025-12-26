@@ -91,4 +91,4 @@ the [official Traefik documentation](https://doc.traefik.io/traefik/expose/docke
 ## Production Setup (External Database)
 
 For production, we recommend using MySQL or PostgreSQL instead of SQLite.
-Check the [database configuration guide](../configuration.md#database-configuration) for more information.
+Check the [database configuration guide](./configuration.md#database-configuration) for more information.

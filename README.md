@@ -14,6 +14,9 @@
   <a href="https://github.com/David-Crty/databasement/actions">
     <img src="https://github.com/David-Crty/databasement/actions/workflows/tests.yml/badge.svg" alt="CI Status" />
   </a>
+  <a href="https://artifacthub.io/packages/helm/databasement/databasement">
+    <img src="https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/databasement" alt="Artifact Hub" />
+  </a>
 </p>
 
 <p align="center">
@@ -44,9 +47,9 @@ Databasement is designed to be self-hosted. We provide several deployment option
 
 | Method | Description | Guide |
 |--------|-------------|-------|
-| **Docker** | Single container deployment (recommended) | [View Guide](https://david-crty.github.io/databasement/self-hosting/guides/docker) |
-| **Docker Compose** | Multi-container setup with external database | [View Guide](https://david-crty.github.io/databasement/self-hosting/guides/docker-compose) |
-| **Kubernetes + Helm** | For Kubernetes clusters | [View Guide](https://david-crty.github.io/databasement/self-hosting/guides/kubernetes-helm) |
+| **Docker** | Single container deployment (recommended) | [View Guide](https://david-crty.github.io/databasement/self-hosting/docker) |
+| **Docker Compose** | Multi-container setup with external database | [View Guide](https://david-crty.github.io/databasement/self-hosting/docker-compose) |
+| **Kubernetes + Helm** | For Kubernetes clusters | [View Guide](https://david-crty.github.io/databasement/self-hosting/kubernetes-helm) |
 
 ### Quick Start
 

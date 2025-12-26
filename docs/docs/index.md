@@ -26,9 +26,9 @@ Learn how to deploy Databasement on your own infrastructure:
 
 - [Introduction](self-hosting/intro) - Overview and requirements
 - [Configuration](self-hosting/configuration) - Environment variables reference
-- [Docker Guide](self-hosting/guides/docker) - Deploy with Docker
-- [Docker Compose Guide](self-hosting/guides/docker-compose) - Deploy with Docker Compose
-- [Kubernetes + Helm](self-hosting/guides/kubernetes-helm) - Deploy on Kubernetes
+- [Docker Guide](self-hosting/docker) - Deploy with Docker
+- [Docker Compose Guide](self-hosting/docker-compose) - Deploy with Docker Compose
+- [Kubernetes + Helm](self-hosting/kubernetes-helm) - Deploy on Kubernetes
 
 ### User Guide
 

@@ -1,6 +1,7 @@
 suite: ingress tests
 chart:
   version: 0.1.0
+  appVersion: 0.1.0
 templates:
   - templates/ingress.yaml
 tests:

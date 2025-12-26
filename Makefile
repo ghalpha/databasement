@@ -1,4 +1,4 @@
-.PHONY: help install start test test-filter test-coverage backup-test lint-check lint-fix lint migrate migrate-fresh db-seed setup clean import-db
+.PHONY: help install start test test-filter test-coverage backup-test lint-check lint-fix lint migrate migrate-fresh db-seed setup clean import-db docs-build
 
 # Colors for output
 GREEN  := \033[0;32m
@@ -72,6 +72,11 @@ build: ## Build production assets
 
 dev-assets: ## Start Vite dev server only
 	$(NPM_EXEC) run dev
+
+##@ Documentation
+
+docs-build: ## Build documentation (Docusaurus)
+	cd docs && $(NPM_EXEC) run build
 
 ##@ Database
 

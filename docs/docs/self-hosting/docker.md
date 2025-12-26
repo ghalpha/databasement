@@ -39,4 +39,4 @@ Access the application at http://localhost:8000
 ## Production Setup (External Database)
 
 For production, we recommend using MySQL or PostgreSQL instead of SQLite.
-Check the [database configuration guide](../configuration.md#database-configuration) for more information.
+Check the [database configuration guide](./configuration.md#database-configuration) for more information.
