@@ -12,22 +12,18 @@ class DemoBackupService
     /**
      * Create a demo backup configuration for the application's own database.
      *
-     * @throws RuntimeException If database connection is SQLite (not supported)
+     * @throws RuntimeException If database connection type is unsupported
      */
     public function createDemoBackup(): DatabaseServer
     {
         $connection = config('database.default');
-
-        if ($connection === 'sqlite') {
-            throw new RuntimeException('SQLite database backups are not yet supported.');
-        }
-
         $dbConfig = config("database.connections.{$connection}");
 
         $databaseType = match ($connection) {
             'mysql' => 'mysql',
             'mariadb' => 'mariadb',
             'pgsql' => 'postgresql',
+            'sqlite' => 'sqlite',
             default => throw new RuntimeException("Unsupported database connection: {$connection}"),
         };
 
@@ -40,17 +36,26 @@ class DemoBackupService
             ],
         ]);
 
-        // Create database server entry
-        $databaseServer = DatabaseServer::create([
-            'name' => 'Databasement Database',
-            'host' => $dbConfig['host'] ?? '127.0.0.1',
-            'port' => (int) ($dbConfig['port'] ?? ($databaseType === 'postgresql' ? 5432 : 3306)),
-            'database_type' => $databaseType,
-            'username' => $dbConfig['username'] ?? '',
-            'password' => $dbConfig['password'] ?? '',
-            'database_names' => [$dbConfig['database'] ?? 'databasement'],
-            'description' => 'Demo backup of the Databasement application database',
-        ]);
+        // Create database server entry based on type
+        if ($databaseType === 'sqlite') {
+            $databaseServer = DatabaseServer::create([
+                'name' => 'Databasement Database',
+                'database_type' => 'sqlite',
+                'sqlite_path' => $dbConfig['database'],
+                'description' => 'Demo backup of the Databasement application database',
+            ]);
+        } else {
+            $databaseServer = DatabaseServer::create([
+                'name' => 'Databasement Database',
+                'host' => $dbConfig['host'] ?? '127.0.0.1',
+                'port' => (int) ($dbConfig['port'] ?? ($databaseType === 'postgresql' ? 5432 : 3306)),
+                'database_type' => $databaseType,
+                'username' => $dbConfig['username'] ?? '',
+                'password' => $dbConfig['password'] ?? '',
+                'database_names' => [$dbConfig['database'] ?? 'databasement'],
+                'description' => 'Demo backup of the Databasement application database',
+            ]);
+        }
 
         // Create backup configuration
         Backup::create([

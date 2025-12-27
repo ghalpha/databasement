@@ -21,6 +21,8 @@ class DatabaseServerForm extends Form
 
     public string $database_type = 'mysql';
 
+    public string $sqlite_path = '';
+
     public string $username = '';
 
     public string $password = '';
@@ -59,6 +61,7 @@ class DatabaseServerForm extends Form
         $this->host = $server->host;
         $this->port = $server->port;
         $this->database_type = $server->database_type;
+        $this->sqlite_path = $server->sqlite_path ?? '';
         $this->username = $server->username;
         $this->database_names = $server->database_names ?? [];
         $this->database_names_input = implode(', ', $this->database_names);
@@ -96,27 +99,44 @@ class DatabaseServerForm extends Form
     }
 
     /**
+     * Check if current database type is SQLite
+     */
+    public function isSqlite(): bool
+    {
+        return $this->database_type === 'sqlite';
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function formValidate(): array
     {
         $this->normalizeDatabaseNames();
 
-        return $this->validate([
+        $rules = [
             'name' => 'required|string|max:255',
-            'host' => 'required|string|max:255',
-            'port' => 'required|integer|min:1|max:65535',
             'database_type' => 'required|string|in:mysql,postgresql,mariadb,sqlite',
-            'username' => 'required|string|max:255',
-            'password' => 'nullable',
-            'backup_all_databases' => 'boolean',
-            'database_names' => $this->backup_all_databases ? 'nullable|array' : 'required|array|min:1',
-            'database_names.*' => 'string|max:255',
             'description' => 'nullable|string|max:1000',
             'volume_id' => 'required|exists:volumes,id',
             'recurrence' => 'required|string|in:'.implode(',', Backup::RECURRENCE_TYPES),
             'retention_days' => 'nullable|integer|min:1|max:35',
-        ]);
+        ];
+
+        if ($this->isSqlite()) {
+            // SQLite only needs path
+            $rules['sqlite_path'] = 'required|string|max:1000';
+        } else {
+            // Client-server databases need connection details
+            $rules['host'] = 'required|string|max:255';
+            $rules['port'] = 'required|integer|min:1|max:65535';
+            $rules['username'] = 'required|string|max:255';
+            $rules['password'] = 'nullable';
+            $rules['backup_all_databases'] = 'boolean';
+            $rules['database_names'] = $this->backup_all_databases ? 'nullable|array' : 'required|array|min:1';
+            $rules['database_names.*'] = 'string|max:255';
+        }
+
+        return $this->validate($rules);
     }
 
     public function store(): bool
@@ -189,13 +209,19 @@ class DatabaseServerForm extends Form
 
         // Validate only the connection-related fields
         try {
-            $this->validate([
-                'host' => 'required|string|max:255',
-                'port' => 'required|integer|min:1|max:65535',
-                'database_type' => 'required|string|in:mysql,postgresql,mariadb,sqlite',
-                'username' => 'required|string|max:255',
-                'password' => (empty($this->server) ? 'required|string|max:255' : 'nullable'),
-            ]);
+            if ($this->isSqlite()) {
+                $this->validate([
+                    'sqlite_path' => 'required|string|max:1000',
+                ]);
+            } else {
+                $this->validate([
+                    'host' => 'required|string|max:255',
+                    'port' => 'required|integer|min:1|max:65535',
+                    'database_type' => 'required|string|in:mysql,postgresql,mariadb,sqlite',
+                    'username' => 'required|string|max:255',
+                    'password' => (empty($this->server) ? 'required|string|max:255' : 'nullable'),
+                ]);
+            }
         } catch (ValidationException $e) {
             $this->testingConnection = false;
             $this->connectionTestSuccess = false;
@@ -204,10 +230,10 @@ class DatabaseServerForm extends Form
             return;
         }
 
-        // Test connection without specific database (server-level connection)
+        // Test connection
         $result = DatabaseConnectionTester::test([
             'database_type' => $this->database_type,
-            'host' => $this->host,
+            'host' => $this->isSqlite() ? $this->sqlite_path : $this->host,
             'port' => $this->port,
             'username' => $this->username,
             'password' => ($this->password) ?: $this->server?->password,
@@ -218,8 +244,8 @@ class DatabaseServerForm extends Form
         $this->connectionTestMessage = $result['message'];
         $this->testingConnection = false;
 
-        // If connection successful, load available databases
-        if ($this->connectionTestSuccess) {
+        // If connection successful and not SQLite, load available databases
+        if ($this->connectionTestSuccess && ! $this->isSqlite()) {
             $this->loadAvailableDatabases();
         }
     }

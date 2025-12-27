@@ -61,42 +61,55 @@ $volumes = \App\Models\Volume::orderBy('name')->get()->map(fn($v) => [
             :options="$databaseTypes"
         />
 
-        <div class="grid gap-4 md:grid-cols-2">
+        @if($form->isSqlite())
+            <!-- SQLite Path -->
             <x-input
-                wire:model.blur="form.host"
-                label="{{ __('Host') }}"
-                placeholder="{{ __('e.g., localhost or 192.168.1.100') }}"
+                wire:model.blur="form.sqlite_path"
+                label="{{ __('Database Path') }}"
+                placeholder="{{ __('e.g., /var/data/database.sqlite') }}"
+                hint="{{ __('Absolute path to the SQLite database file') }}"
                 type="text"
                 required
             />
+        @else
+            <!-- Client-server database connection fields -->
+            <div class="grid gap-4 md:grid-cols-2">
+                <x-input
+                    wire:model.blur="form.host"
+                    label="{{ __('Host') }}"
+                    placeholder="{{ __('e.g., localhost or 192.168.1.100') }}"
+                    type="text"
+                    required
+                />
 
-            <x-input
-                wire:model.blur="form.port"
-                label="{{ __('Port') }}"
-                placeholder="{{ __('e.g., 3306') }}"
-                type="number"
-                required
-            />
-        </div>
+                <x-input
+                    wire:model.blur="form.port"
+                    label="{{ __('Port') }}"
+                    placeholder="{{ __('e.g., 3306') }}"
+                    type="number"
+                    required
+                />
+            </div>
 
-        <div class="grid gap-4 md:grid-cols-2">
-            <x-input
-                wire:model.blur="form.username"
-                label="{{ __('Username') }}"
-                placeholder="{{ __('Database username') }}"
-                type="text"
-                required
-                autocomplete="off"
-            />
+            <div class="grid gap-4 md:grid-cols-2">
+                <x-input
+                    wire:model.blur="form.username"
+                    label="{{ __('Username') }}"
+                    placeholder="{{ __('Database username') }}"
+                    type="text"
+                    required
+                    autocomplete="off"
+                />
 
-            <x-password
-                wire:model.blur="form.password"
-                label="{{ __('Password') }}"
-                placeholder="{{ $isEdit ? __('Leave blank to keep current password') : __('Database password') }}"
-                :required="!$isEdit"
-                autocomplete="off"
-            />
-        </div>
+                <x-password
+                    wire:model.blur="form.password"
+                    label="{{ __('Password') }}"
+                    placeholder="{{ $isEdit ? __('Leave blank to keep current password') : __('Database password') }}"
+                    :required="!$isEdit"
+                    autocomplete="off"
+                />
+            </div>
+        @endif
 
         <!-- Test Connection Button -->
         <div class="pt-2">
@@ -128,8 +141,8 @@ $volumes = \App\Models\Volume::orderBy('name')->get()->map(fn($v) => [
         @endif
     </div>
 
-    <!-- Step 2: Database Selection (only shown after successful connection) -->
-    @if($form->connectionTestSuccess or $isEdit)
+    <!-- Step 2: Database Selection (only shown after successful connection, not for SQLite) -->
+    @if(($form->connectionTestSuccess or $isEdit) && !$form->isSqlite())
         <x-hr />
 
         <div class="space-y-4">
@@ -174,8 +187,10 @@ $volumes = \App\Models\Volume::orderBy('name')->get()->map(fn($v) => [
                 @endif
             @endif
         </div>
+    @endif
 
-        <!-- Backup Configuration -->
+    <!-- Backup Configuration (Step 2 for SQLite, Step 3 for others) -->
+    @if($form->connectionTestSuccess or $isEdit)
         <x-hr />
 
         <div class="space-y-4">

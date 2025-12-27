@@ -22,12 +22,29 @@ class DatabaseServerFactory extends Factory
             'name' => fake()->company().' '.fake()->randomElement(['MySQL', 'PostgreSQL', 'MariaDB']).' Server',
             'host' => fake()->randomElement(['localhost', '127.0.0.1', fake()->ipv4()]),
             'port' => fake()->randomElement([3306, 5432, 3307, 5433]),
-            'database_type' => fake()->randomElement(['mysql', 'postgresql', 'mariadb', 'sqlite']),
+            'database_type' => fake()->randomElement(['mysql', 'postgresql', 'mariadb']),
             'username' => fake()->userName(),
             'password' => fake()->password(),
             'database_names' => fake()->optional()->randomElements(['app', 'users', 'orders', 'products', 'analytics'], fake()->numberBetween(1, 3)),
             'description' => fake()->optional()->sentence(),
         ];
+    }
+
+    /**
+     * Configure the factory for SQLite database type.
+     */
+    public function sqlite(): static
+    {
+        return $this->state(fn () => [
+            'name' => fake()->company().' SQLite Database',
+            'database_type' => 'sqlite',
+            'sqlite_path' => '/data/'.fake()->slug().'.sqlite',
+            'host' => '',
+            'port' => 0,
+            'username' => '',
+            'password' => '',
+            'database_names' => null,
+        ]);
     }
 
     /**

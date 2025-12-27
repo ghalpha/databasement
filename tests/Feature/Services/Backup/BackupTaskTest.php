@@ -95,8 +95,14 @@ function setupCommonExpectations(Snapshot $snapshot): void
 }
 
 afterEach(function () {
-    // Remove temp directory
+    // Remove temp directory and all files within
     if (is_dir($this->tempDir)) {
+        $files = glob($this->tempDir.'/*');
+        foreach ($files as $file) {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
         rmdir($this->tempDir);
     }
 
@@ -341,4 +347,46 @@ test('createSnapshots throws exception when backup_all_databases is enabled but 
     // Act & Assert
     expect(fn () => $backupJobFactory->createSnapshots($databaseServer, 'manual'))
         ->toThrow(\RuntimeException::class, 'No databases found on the server to backup.');
+});
+
+test('run executes sqlite backup workflow successfully', function () {
+    // Create a temporary SQLite file for testing
+    $sqlitePath = $this->tempDir.'/test.sqlite';
+    touch($sqlitePath);
+    file_put_contents($sqlitePath, 'test sqlite content');
+
+    // Arrange
+    $databaseServer = createDatabaseServer([
+        'name' => 'SQLite Database',
+        'database_type' => 'sqlite',
+        'sqlite_path' => $sqlitePath,
+        'host' => '',
+        'port' => 0,
+        'username' => '',
+        'password' => '',
+        'database_names' => null,
+    ]);
+
+    $snapshots = $this->backupJobFactory->createSnapshots($databaseServer, 'manual');
+    $snapshot = $snapshots[0];
+
+    // Verify snapshot has correct database name (filename)
+    expect($snapshot->database_name)->toBe('test.sqlite');
+
+    setupCommonExpectations($snapshot);
+    $this->backupTask->run($snapshot);
+
+    $dbFile = $this->tempDir.'/'.$snapshot->id.'.db';
+
+    $expectedCommands = [
+        "cp '{$sqlitePath}' '{$dbFile}'",
+        "gzip '{$dbFile}'",
+    ];
+    $commands = $this->shellProcessor->getCommands();
+    expect($commands)->toEqual($expectedCommands);
+
+    // Verify snapshot is completed
+    $snapshot->refresh();
+    expect($snapshot->job->status)->toBe('completed')
+        ->and($snapshot->storage_uri)->toContain('.db.gz');
 });

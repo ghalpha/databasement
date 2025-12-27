@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property string $host
  * @property int $port
  * @property string $database_type
+ * @property string|null $sqlite_path
  * @property string $username
  * @property string $password
  * @property array<string>|null $database_names
@@ -71,6 +72,7 @@ class DatabaseServer extends Model
         'host',
         'port',
         'database_type',
+        'sqlite_path',
         'username',
         'password',
         'database_names',

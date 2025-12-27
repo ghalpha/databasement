@@ -355,52 +355,67 @@ test('run throws exception when restore command failed', function () {
     expect($job->completed_at)->not->toBeNull();
 });
 
-test('run throws exception for unsupported database type', function () {
-    // Arrange - use sqlite as unsupported for backup/restore operations
-    // (sqlite is valid in the enum but not supported in RestoreTask operations)
+test('run executes sqlite restore workflow successfully', function () {
+    // Arrange
+    $sqlitePath = $this->tempDir.'/app.sqlite';
+
     $sourceServer = createRestoreDatabaseServer([
         'name' => 'Source SQLite',
-        'host' => '/tmp/test.db',
-        'port' => 0,
         'database_type' => 'sqlite',
+        'sqlite_path' => $sqlitePath,
+        'host' => '',
+        'port' => 0,
         'username' => '',
         'password' => '',
-        'database_names' => ['sourcedb'],
+        'database_names' => null,
     ]);
 
     $targetServer = createRestoreDatabaseServer([
         'name' => 'Target SQLite',
-        'host' => '/tmp/test.db',
-        'port' => 0,
         'database_type' => 'sqlite',
+        'sqlite_path' => $sqlitePath,
+        'host' => '',
+        'port' => 0,
         'username' => '',
         'password' => '',
-        'database_names' => ['targetdb'],
+        'database_names' => null,
     ]);
 
-    // Create snapshot and mark as completed
+    // Create snapshot and update path for restore test
     $snapshots = $this->backupJobFactory->createSnapshots($sourceServer, 'manual');
     $snapshot = $snapshots[0];
-    $snapshot->update(['storage_uri' => 'local:///tmp/backup.sql.gz']);
+    $snapshot->update(['storage_uri' => 'local:///tmp/backup.db.gz']);
     $snapshot->job->markCompleted();
 
     // Create restore job
-    $restore = $this->backupJobFactory->createRestore($snapshot, $targetServer, 'restored_db');
+    $restore = $this->backupJobFactory->createRestore($snapshot, $targetServer, 'app.sqlite');
 
+    // Mock download - create a compressed file that will be decompressed
     $this->filesystemProvider
         ->shouldReceive('download')
         ->once()
+        ->with($restore->snapshot, Mockery::any())
         ->andReturnUsing(function ($snap, $destination) {
-            file_put_contents($destination, 'compressed test data');
+            file_put_contents($destination, 'compressed backup data');
         });
 
-    // Mock createAdminConnection - it will be called before the exception is thrown
-    $this->connectionFactory
-        ->shouldReceive('createAdminConnection')
-        ->once()
-        ->andReturn(Mockery::mock(\PDO::class));
+    // Act
+    $this->restoreTask->run($restore, $this->tempDir);
 
-    // Act & Assert - SQLite is not supported in RestoreTask
-    expect(fn () => $this->restoreTask->run($restore, $this->tempDir))
-        ->toThrow(\App\Exceptions\Backup\UnsupportedDatabaseTypeException::class, "Database type 'sqlite' is not supported");
+    // Build expected file paths
+    $compressedFile = $this->tempDir.'/backup.db.gz';
+    $decompressedFile = $this->tempDir.'/backup.db';
+
+    // Expected commands - SQLite restore is just a file copy
+    $expectedCommands = [
+        "gzip -d '$compressedFile'",
+        "cp '$decompressedFile' '$sqlitePath'",
+    ];
+
+    $commands = $this->shellProcessor->getCommands();
+    expect($commands)->toEqual($expectedCommands);
+
+    // Verify job completed
+    $restore->refresh();
+    expect($restore->job->status)->toBe('completed');
 });

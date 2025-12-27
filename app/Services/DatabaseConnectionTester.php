@@ -27,6 +27,11 @@ class DatabaseConnectionTester
                 ];
             }
 
+            // SQLite: check if file exists and is readable
+            if ($databaseType === DatabaseType::SQLITE) {
+                return $this->testSqliteConnection($config['host']);
+            }
+
             $dsn = $databaseType->buildDsn(
                 $config['host'],
                 $config['port'],
@@ -59,6 +64,60 @@ class DatabaseConnectionTester
             return [
                 'success' => false,
                 'message' => 'Failed to connect: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Test SQLite connection by checking if file exists and is readable.
+     *
+     * @return array{success: bool, message: string}
+     */
+    private function testSqliteConnection(string $path): array
+    {
+        if (empty($path)) {
+            return [
+                'success' => false,
+                'message' => 'Database path is required.',
+            ];
+        }
+
+        if (! file_exists($path)) {
+            return [
+                'success' => false,
+                'message' => 'Database file does not exist: '.$path,
+            ];
+        }
+
+        if (! is_readable($path)) {
+            return [
+                'success' => false,
+                'message' => 'Database file is not readable: '.$path,
+            ];
+        }
+
+        if (! is_file($path)) {
+            return [
+                'success' => false,
+                'message' => 'Path is not a file: '.$path,
+            ];
+        }
+
+        // Try to open the SQLite database to verify it's valid
+        try {
+            $pdo = new PDO("sqlite:{$path}", null, null, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            ]);
+            $pdo->query('SELECT 1');
+
+            return [
+                'success' => true,
+                'message' => 'Successfully connected to the SQLite database!',
+            ];
+        } catch (PDOException $e) {
+            return [
+                'success' => false,
+                'message' => 'Invalid SQLite database file: '.$e->getMessage(),
             ];
         }
     }

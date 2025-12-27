@@ -35,7 +35,9 @@ class BackupTask
         $this->setLogger($job);
 
         $workingDirectory = rtrim(config('backup.tmp_folder'), '/');
-        $workingFile = $workingDirectory.'/'.$snapshot->id.'.sql';
+        $isSqlite = $databaseServer->database_type === 'sqlite';
+        $extension = $isSqlite ? 'db' : 'sql';
+        $workingFile = $workingDirectory.'/'.$snapshot->id.'.'.$extension;
 
         try {
             if (! is_dir($workingDirectory)) {
@@ -134,16 +136,29 @@ class BackupTask
 
     private function dumpDatabase(DatabaseServer $databaseServer, string $databaseName, string $outputPath): void
     {
-        // Configure database interface with the specific database name
-        $this->configureDatabaseInterface($databaseServer, $databaseName);
+        if ($databaseServer->database_type === 'sqlite') {
+            // SQLite: copy the file directly
+            $command = $this->copySqliteDatabase($databaseServer->sqlite_path, $outputPath);
+        } else {
+            // Configure database interface with the specific database name
+            $this->configureDatabaseInterface($databaseServer, $databaseName);
 
-        $command = match ($databaseServer->database_type) {
-            'mysql', 'mariadb' => $this->mysqlDatabase->getDumpCommandLine($outputPath),
-            'postgresql' => $this->postgresqlDatabase->getDumpCommandLine($outputPath),
-            default => throw new \Exception("Database type {$databaseServer->database_type} not supported"),
-        };
+            $command = match ($databaseServer->database_type) {
+                'mysql', 'mariadb' => $this->mysqlDatabase->getDumpCommandLine($outputPath),
+                'postgresql' => $this->postgresqlDatabase->getDumpCommandLine($outputPath),
+                default => throw new \Exception("Database type {$databaseServer->database_type} not supported"),
+            };
+        }
 
         $this->shellProcessor->process($command);
+    }
+
+    /**
+     * Copy SQLite database file to the output path.
+     */
+    private function copySqliteDatabase(string $sourcePath, string $outputPath): string
+    {
+        return sprintf("cp '%s' '%s'", $sourcePath, $outputPath);
     }
 
     private function generateBackupFilename(DatabaseServer $databaseServer, string $databaseName): string
@@ -151,8 +166,9 @@ class BackupTask
         $timestamp = now()->format('Y-m-d-His');
         $serverName = preg_replace('/[^a-zA-Z0-9-_]/', '-', $databaseServer->name);
         $sanitizedDbName = preg_replace('/[^a-zA-Z0-9-_]/', '-', $databaseName);
+        $extension = $databaseServer->database_type === 'sqlite' ? 'db.gz' : 'sql.gz';
 
-        return sprintf('%s-%s-%s.sql.gz', $serverName, $sanitizedDbName, $timestamp);
+        return sprintf('%s-%s-%s.%s', $serverName, $sanitizedDbName, $timestamp, $extension);
     }
 
     /**

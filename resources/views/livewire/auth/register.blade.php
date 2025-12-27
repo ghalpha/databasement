@@ -50,7 +50,7 @@
                 placeholder="{{ __('Confirm password') }}"
             />
 
-            @if(\App\Models\User::count() === 0 && config('database.default') !== 'sqlite')
+            @if(\App\Models\User::count() === 0)
             <!-- Demo Backup Option -->
             <x-checkbox
                 name="create_demo_backup"

@@ -81,13 +81,23 @@ class RestoreTask
                 'file_size' => filesize($compressedFile),
             ]);
             $workingFile = $this->compressor->decompress($compressedFile);
-            $this->prepareDatabase($targetServer, $restore->schema_name, $job);
-            $this->configureDatabaseInterface($targetServer, $restore->schema_name);
-            $job->log('Restoring database from snapshot', 'info', [
-                'source_database' => $snapshot->database_name,
-                'target_database' => $restore->schema_name,
-            ]);
-            $this->restoreDatabase($targetServer, $workingFile);
+
+            if ($targetServer->database_type === 'sqlite') {
+                // SQLite: simply copy the file to the target path
+                $job->log('Restoring SQLite database', 'info', [
+                    'source_database' => $snapshot->database_name,
+                    'target_path' => $targetServer->sqlite_path,
+                ]);
+                $this->restoreSqliteDatabase($workingFile, $targetServer->sqlite_path);
+            } else {
+                $this->prepareDatabase($targetServer, $restore->schema_name, $job);
+                $this->configureDatabaseInterface($targetServer, $restore->schema_name);
+                $job->log('Restoring database from snapshot', 'info', [
+                    'source_database' => $snapshot->database_name,
+                    'target_database' => $restore->schema_name,
+                ]);
+                $this->restoreDatabase($targetServer, $workingFile);
+            }
 
             // Clean up temporary files (compressed file already deleted by gzip -d)
             $job->log('Cleaning up temporary files', 'info');
@@ -192,6 +202,15 @@ class RestoreTask
             default => throw new UnsupportedDatabaseTypeException($targetServer->database_type),
         };
 
+        $this->shellProcessor->process($command);
+    }
+
+    /**
+     * Restore SQLite database by copying file to target path.
+     */
+    private function restoreSqliteDatabase(string $sourcePath, string $targetPath): void
+    {
+        $command = sprintf("cp '%s' '%s'", $sourcePath, $targetPath);
         $this->shellProcessor->process($command);
     }
 
