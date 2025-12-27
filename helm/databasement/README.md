@@ -40,10 +40,11 @@ Copy the output (e.g., `base64:abc123...`) for use in your values file.
 
 For simple deployments using SQLite:
 
-```yaml title="values.yaml"
+```yaml
 app:
   url: https://backup.yourdomain.com
-  key: "base64:your-generated-key-here"
+  appKey:
+    value: "base64:your-generated-key-here"
 
 ingress:
   enabled: true
@@ -51,7 +52,7 @@ ingress:
   host: backup.yourdomain.com
   # For HTTPS using cert-manager:
   # tlsSecretName: databasement-tls
-  # annotations:  # Optional: for HTTPS
+  # annotations:
   #   cert-manager.io/cluster-issuer: letsencrypt-prod
 ```
 
@@ -68,24 +69,35 @@ database:
   port: 3306
   name: databasement
   username: databasement
-  password: your-secure-password
+  password:
+    value: "your-secure-password"
+
+ingress:
+  enabled: true
+  className: nginx
+  host: backup.yourdomain.com
 ```
 
-## Configuration
+#### Using Existing Secrets
 
-See [values.yaml](values.yaml) for the full list of configurable parameters.
-
-For all available environment variables, see the [Configuration Documentation](https://david-crty.github.io/databasement/self-hosting/configuration).
-
-### Custom Environment Variables
-
-Use the `env` parameter to pass additional environment variables:
+For sensitive values, you can reference existing Kubernetes secrets:
 
 ```yaml
-env:
-  AWS_ACCESS_KEY_ID: "your-access-key"
-  AWS_SECRET_ACCESS_KEY: "your-secret-key"
-  AWS_DEFAULT_REGION: "us-east-1"
+app:
+  appKey:
+    fromSecret:
+      secretName: "my-app-secret"
+      secretKey: "APP_KEY"
+
+database:
+  connection: mysql
+  host: mysql.example.com
+  name: databasement
+  username: databasement
+  password:
+    fromSecret:
+      secretName: "my-db-secret"
+      secretKey: "password"
 ```
 
 ### 4. Install the Chart
@@ -97,20 +109,49 @@ helm upgrade --install databasement databasement/databasement -f values.yaml
 ### 5. Verify the Deployment
 
 ```bash
-kubectl get pods -n databasement
-kubectl get svc -n databasement
-kubectl get ingress -n databasement
+kubectl get pods
+kubectl get svc
+kubectl get ingress
+```
+
+## Configuration
+
+See [values.yaml](values.yaml) for the full list of configurable parameters.
+
+For all available environment variables, see the [Configuration Documentation](https://david-crty.github.io/databasement/self-hosting/configuration).
+
+### Custom Environment Variables
+
+Use `extraEnv` to pass additional environment variables:
+
+```yaml
+extraEnv:
+  AWS_ACCESS_KEY_ID: "your-access-key"
+  AWS_SECRET_ACCESS_KEY: "your-secret-key"
+  AWS_DEFAULT_REGION: "us-east-1"
+```
+
+### Environment Variables from Secrets/ConfigMaps
+
+Use `extraEnvFrom` to load environment variables from existing secrets or configmaps:
+
+```yaml
+extraEnvFrom:
+  - secretRef:
+      name: aws-credentials
+  - configMapRef:
+      name: app-config
 ```
 
 ## Uninstalling
 
 ```bash
-helm uninstall databasement -n databasement
+helm uninstall databasement
 ```
 
 > **Caution:** This will not delete the PersistentVolumeClaim by default. To delete all data:
 > ```bash
-> kubectl delete pvc -l app.kubernetes.io/name=databasement -n databasement
+> kubectl delete pvc -l app.kubernetes.io/name=databasement
 > ```
 
 ## License

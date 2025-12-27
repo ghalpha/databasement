@@ -8,9 +8,9 @@ This guide will help you deploy Databasement on Kubernetes using Helm.
 
 ## Prerequisites
 
-- A Kubernetes cluster
-- [Helm](https://helm.sh/docs/intro/install/) v3.x installed
-- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) configured for your cluster
+- Kubernetes 1.19+
+- [Helm](https://helm.sh/docs/intro/install/) 3.x
+- [kubectl](https://kubernetes.io/docs/tasks/tools/) configured for your cluster
 
 ## Installation
 
@@ -40,7 +40,8 @@ For simple deployments using SQLite:
 ```yaml title="values.yaml"
 app:
   url: https://backup.yourdomain.com
-  key: "base64:your-generated-key-here"
+  appKey:
+    value: "base64:your-generated-key-here"
 
 ingress:
   enabled: true
@@ -48,7 +49,7 @@ ingress:
   host: backup.yourdomain.com
   # For HTTPS using cert-manager:
   # tlsSecretName: databasement-tls
-  # annotations:  # Optional: for HTTPS
+  # annotations:
   #   cert-manager.io/cluster-issuer: letsencrypt-prod
 ```
 
@@ -65,24 +66,35 @@ database:
   port: 3306
   name: databasement
   username: databasement
-  password: your-secure-password
+  password:
+    value: "your-secure-password"
+
+ingress:
+  enabled: true
+  className: nginx
+  host: backup.yourdomain.com
 ```
 
-### Configuration
+#### Using Existing Secrets
 
-See [values.yaml](values.yaml) for the full list of configurable parameters.
+For sensitive values, you can reference existing Kubernetes secrets instead of storing them in your values file:
 
-For all available environment variables, see the [Configuration Documentation](https://david-crty.github.io/databasement/self-hosting/configuration).
+```yaml title="values.yaml"
+app:
+  appKey:
+    fromSecret:
+      secretName: "my-app-secret"
+      secretKey: "APP_KEY"
 
-### Custom Environment Variables
-
-Use the `env` parameter to pass additional environment variables:
-
-```yaml
-env:
-  AWS_ACCESS_KEY_ID: "your-access-key"
-  AWS_SECRET_ACCESS_KEY: "your-secret-key"
-  AWS_DEFAULT_REGION: "us-east-1"
+database:
+  connection: mysql
+  host: mysql.example.com
+  name: databasement
+  username: databasement
+  password:
+    fromSecret:
+      secretName: "my-db-secret"
+      secretKey: "password"
 ```
 
 ### 4. Install the Chart
@@ -94,20 +106,93 @@ helm upgrade --install databasement databasement/databasement -f values.yaml
 ### 5. Verify the Deployment
 
 ```bash
-kubectl get pods -n databasement
-kubectl get svc -n databasement
-kubectl get ingress -n databasement
+kubectl get pods
+kubectl get svc
+kubectl get ingress
+```
+
+## Configuration
+
+For the full list of configurable parameters, see the [values.yaml](https://github.com/david-crty/databasement/blob/main/helm/databasement/values.yaml) file.
+
+For all available environment variables, see the [Configuration](./configuration.md) page.
+
+### Custom Environment Variables
+
+Use `extraEnv` to pass additional environment variables:
+
+```yaml
+extraEnv:
+  AWS_ACCESS_KEY_ID: "your-access-key"
+  AWS_SECRET_ACCESS_KEY: "your-secret-key"
+  AWS_DEFAULT_REGION: "us-east-1"
+```
+
+### Environment Variables from Secrets/ConfigMaps
+
+Use `extraEnvFrom` to load environment variables from existing secrets or configmaps:
+
+```yaml
+extraEnvFrom:
+  - secretRef:
+      name: aws-credentials
+  - configMapRef:
+      name: app-config
+```
+
+This is useful for injecting credentials managed by external secret management tools (e.g., External Secrets Operator, Sealed Secrets).
+
+### Worker Configuration
+
+The queue worker runs as a sidecar container by default. You can customize its behavior:
+
+```yaml
+worker:
+  enabled: true
+  command: "php artisan queue:work --queue=backups,default --tries=3 --timeout=3600"
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+```
+
+For high-availability setups with an external database, you can run the worker as a separate deployment:
+
+```yaml
+worker:
+  separateDeployment: true
+  replicaCount: 2
+```
+
+:::note
+Separate worker deployment requires either ReadWriteMany storage or an external database (MySQL/PostgreSQL).
+:::
+
+### Persistence
+
+By default, persistence is enabled with a 10Gi volume:
+
+```yaml
+persistence:
+  enabled: true
+  storageClass: ""  # Uses default storage class
+  size: 10Gi
+  accessModes:
+    - ReadWriteOnce
 ```
 
 ## Uninstalling
 
 ```bash
-helm uninstall databasement -n databasement
+helm uninstall databasement
 ```
 
 :::caution
 This will not delete the PersistentVolumeClaim by default. To delete all data:
 ```bash
-kubectl delete pvc -l app.kubernetes.io/name=databasement -n databasement
+kubectl delete pvc -l app.kubernetes.io/name=databasement
 ```
 :::
