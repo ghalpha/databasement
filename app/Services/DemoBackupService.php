@@ -38,7 +38,7 @@ class DemoBackupService
             ],
         ]);
 
-        $description = "Demo database";
+        $description = 'Demo database';
         // Create database server entry based on type
         if ($databaseType === 'sqlite') {
             $databaseServer = DatabaseServer::create([
