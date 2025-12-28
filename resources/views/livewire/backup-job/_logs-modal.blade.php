@@ -43,7 +43,10 @@
                             @elseif($this->selectedJob->status === 'failed')
                                 <x-badge value="{{ __('Failed') }}" class="badge-error" />
                             @elseif($this->selectedJob->status === 'running')
-                                <x-badge value="{{ __('Running') }}" class="badge-warning" />
+                                <div class="badge badge-warning gap-1">
+                                    <x-loading class="loading-spinner loading-xs" />
+                                    {{ __('Running') }}
+                                </div>
                             @else
                                 <x-badge value="{{ ucfirst($this->selectedJob->status) }}" class="badge-info" />
                             @endif
@@ -167,11 +170,10 @@
                                                     @if($isRunning || isset($log['exit_code']) || isset($log['duration_ms']))
                                                         <div class="flex items-center gap-2">
                                                             @if($isRunning)
-                                                                <x-badge value="{{ __('Running') }}" class="badge-warning badge-sm">
-                                                                    <x-slot:prepend>
-                                                                        <x-loading class="loading-spinner loading-xs" />
-                                                                    </x-slot:prepend>
-                                                                </x-badge>
+                                                                <div class="badge badge-warning badge-sm gap-1">
+                                                                    <x-loading class="loading-spinner loading-xs" />
+                                                                    {{ __('Running') }}
+                                                                </div>
                                                             @elseif(isset($log['exit_code']))
                                                                 <span class="text-xs text-base-content/50">{{ __('Exit code') }}:</span>
                                                                 <x-badge

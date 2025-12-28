@@ -66,8 +66,8 @@
                             @elseif($job->status === 'failed')
                                 <x-badge value="{{ __('Failed') }}" class="badge-error badge-sm" />
                             @elseif($job->status === 'running')
-                                <div class="badge badge-warning badge-sm">
-                                    <x-loading class="loading-xs mr-1" />
+                                <div class="badge badge-warning badge-sm gap-1">
+                                    <x-loading class="loading-spinner loading-xs" />
                                     {{ __('Running') }}
                                 </div>
                             @else
