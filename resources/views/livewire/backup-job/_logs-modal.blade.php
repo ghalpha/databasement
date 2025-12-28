@@ -38,7 +38,6 @@
                             />
                         @endif
                         <div class="text-right">
-                            <div class="text-sm text-base-content/70">{{ __('Status') }}</div>
                             @if($this->selectedJob->status === 'completed')
                                 <x-badge value="{{ __('Completed') }}" class="badge-success" />
                             @elseif($this->selectedJob->status === 'failed')
@@ -91,16 +90,27 @@
                     <div class="max-h-[60vh] overflow-y-auto divide-y divide-base-300">
                         @foreach($logs as $index => $log)
                             @php
-                                $isRunning = $log['type'] === 'command' && ($log['status'] ?? null) === 'running';
-                                $isError = ($log['type'] === 'command' && isset($log['exit_code']) && $log['exit_code'] !== 0) ||
-                                           ($log['type'] !== 'command' && ($log['level'] ?? '') === 'error');
-                                $isWarning = ($log['type'] !== 'command' && ($log['level'] ?? '') === 'warning') || $isRunning;
-                                $isSuccess = ($log['type'] === 'command' && isset($log['exit_code']) && $log['exit_code'] === 0) ||
-                                             ($log['type'] !== 'command' && ($log['level'] ?? '') === 'success');
                                 $timestamp = \Carbon\Carbon::parse($log['timestamp']);
-                                $logLevel = $log['type'] === 'command' ? 'command' : ($log['level'] ?? 'info');
-                                $hasDetails = $log['type'] === 'command' || (isset($log['context']) && !empty($log['context']));
+                                $isCommand = $log['type'] === 'command';
+                                $isRunning = $isCommand && ($log['status'] ?? null) === 'running';
+
+                                // Determine visual state via pattern matching instead of complex booleans
+                                $rowState = match(true) {
+                                    $isRunning => 'warning',
+                                    $isCommand && isset($log['exit_code']) && $log['exit_code'] !== 0 => 'error',
+                                    $isCommand && isset($log['exit_code']) && $log['exit_code'] === 0 => 'success',
+                                    !$isCommand => $log['level'] ?? 'info',
+                                    default => 'info',
+                                };
+
+                                $isError = $rowState === 'error';
+                                $isWarning = $rowState === 'warning';
+                                $isSuccess = $rowState === 'success';
+
+                                $logLevel = $isCommand ? 'command' : ($log['level'] ?? 'info');
+                                $hasDetails = $isCommand || !empty($log['context']);
                             @endphp
+
 
                             <div class="flex border-l-4 {{ $isError ? 'border-l-error bg-error/5' : ($isWarning ? 'border-l-warning' : ($isSuccess ? 'border-l-success' : 'border-l-info')) }}">
                                 @if($hasDetails)
@@ -157,7 +167,6 @@
                                                     @if($isRunning || isset($log['exit_code']) || isset($log['duration_ms']))
                                                         <div class="flex items-center gap-2">
                                                             @if($isRunning)
-                                                                <span class="text-xs text-base-content/50">{{ __('Status') }}:</span>
                                                                 <x-badge value="{{ __('Running') }}" class="badge-warning badge-sm">
                                                                     <x-slot:prepend>
                                                                         <x-loading class="loading-spinner loading-xs" />
