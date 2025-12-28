@@ -24,6 +24,7 @@
       "Bash(php -d xdebug.mode=coverage ./vendor/bin/pest:*)",
       "Bash(helm unittest:*)",
       "Bash(helm lint:*)",
+      "Bash(helm template:*)",
       "WebFetch(domain:daisyui.com)"
     ],
     "deny": [],
