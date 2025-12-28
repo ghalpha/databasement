@@ -159,7 +159,7 @@
                                                         <pre data-prefix="$"><code>{{ $log['command'] }}</code></pre>
                                                         @if(isset($log['output']) && !empty(trim($log['output'])))
                                                             @foreach(explode("\n", trim($log['output'])) as $line)
-                                                                <pre data-prefix=">"><code>{{ $line }}</code></pre>
+                                                                <pre data-prefix=">"><code class="{{ $isError ? 'text-error' : '' }}">{{ $line }}</code></pre>
                                                             @endforeach
                                                         @endif
                                                     </div>
