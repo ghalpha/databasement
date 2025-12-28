@@ -38,13 +38,14 @@ class DemoBackupService
             ],
         ]);
 
+        $description = "Demo database";
         // Create database server entry based on type
         if ($databaseType === 'sqlite') {
             $databaseServer = DatabaseServer::create([
                 'name' => 'Databasement Database',
                 'database_type' => 'sqlite',
                 'sqlite_path' => $dbConfig['database'],
-                'description' => 'Demo backup of the Databasement application database',
+                'description' => $description,
             ]);
         } else {
             $databaseServer = DatabaseServer::create([
@@ -55,7 +56,7 @@ class DemoBackupService
                 'username' => $dbConfig['username'] ?? '',
                 'password' => $dbConfig['password'] ?? '',
                 'database_names' => [$dbConfig['database'] ?? 'databasement'],
-                'description' => 'Demo backup of the Databasement application database',
+                'description' => $description,
             ]);
         }
 

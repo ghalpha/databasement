@@ -41,11 +41,20 @@
             @endscope
 
             @scope('cell_host', $server)
-                {{ $server->host }}:{{ $server->port }}
+                @if($server->database_type === 'sqlite')
+                    <div class="flex items-center gap-1">
+                        <x-icon name="o-document" class="w-4 h-4 text-base-content/50" />
+                        <span class="font-mono text-sm" title="{{ $server->sqlite_path }}">{{ Str::limit(basename($server->sqlite_path), 30) }}</span>
+                    </div>
+                @else
+                    {{ $server->host }}:{{ $server->port }}
+                @endif
             @endscope
 
             @scope('cell_database_names', $server)
-                @if($server->backup_all_databases)
+                @if($server->database_type === 'sqlite')
+                    <span class="text-base-content/50 italic">{{ __('Single file') }}</span>
+                @elseif($server->backup_all_databases)
                     <x-badge value="{{ __('All') }}" class="badge-info badge-soft" />
                 @elseif($server->database_names && count($server->database_names) > 0)
                     @if(count($server->database_names) === 1)

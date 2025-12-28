@@ -142,6 +142,72 @@ test('postgresql backup and restore workflow', function () {
     expect($stmt)->not->toBeFalse();
 });
 
+test('sqlite backup and restore workflow', function () {
+    integrationSetupTestEnvironment();
+    integrationCleanupLeftoverTestData('sqlite');
+
+    // Create a test SQLite database with some data
+    $sourceSqlitePath = '/tmp/backups/test_source.sqlite';
+    $restoredSqlitePath = '/tmp/backups/test_restored_'.time().'.sqlite';
+    integrationCreateTestSqliteDatabase($sourceSqlitePath);
+
+    // Create models
+    $this->volume = integrationCreateVolume('sqlite');
+    $this->databaseServer = integrationCreateSqliteDatabaseServer($sourceSqlitePath);
+    $this->backup = integrationCreateBackup($this->databaseServer, $this->volume);
+    $this->databaseServer->load('backup.volume');
+
+    // Run backup
+    $snapshots = $this->backupJobFactory->createSnapshots(
+        server: $this->databaseServer,
+        method: 'manual',
+        triggeredByUserId: null
+    );
+    $this->snapshot = $snapshots[0];
+    $this->backupTask->run($this->snapshot);
+    $this->snapshot->refresh();
+    $this->snapshot->load('job');
+
+    expect($this->snapshot->job->status)->toBe('completed');
+    expect($this->snapshot->file_size)->toBeGreaterThan(0);
+    expect($this->snapshot->database_host)->toBeNull();
+
+    // Verify backup file
+    $backupFile = integrationFindLatestBackupFile();
+    expect($backupFile)->not->toBeNull();
+    expect(filesize($backupFile))->toBeGreaterThan(100);
+    expect(integrationIsGzipped($backupFile))->toBeTrue();
+
+    // Create a target server for restore (different sqlite file)
+    $targetServer = integrationCreateSqliteDatabaseServer($restoredSqlitePath);
+    Backup::create([
+        'database_server_id' => $targetServer->id,
+        'volume_id' => $this->volume->id,
+        'recurrence' => 'manual',
+    ]);
+
+    // Run restore
+    $restore = $this->backupJobFactory->createRestore(
+        snapshot: $this->snapshot,
+        targetServer: $targetServer,
+        schemaName: $restoredSqlitePath,
+    );
+    $this->restoreTask->run($restore);
+
+    // Verify restore - check that the restored database has the test data
+    $pdo = new PDO("sqlite:{$restoredSqlitePath}");
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $stmt = $pdo->query('SELECT COUNT(*) as count FROM test_table');
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    expect((int) $result['count'])->toBe(3);
+
+    // Cleanup
+    @unlink($sourceSqlitePath);
+    @unlink($restoredSqlitePath);
+    $targetServer->delete();
+});
+
 // Helper functions
 
 function integrationSetupTestEnvironment(): void
@@ -204,6 +270,7 @@ function integrationCleanupLeftoverTestData(string $type): void
     $serverName = match ($type) {
         'mysql' => 'Integration Test MySQL Server',
         'postgres' => 'Integration Test PostgreSQL Server',
+        'sqlite' => 'Integration Test SQLite Server',
         default => null,
     };
 
@@ -214,16 +281,55 @@ function integrationCleanupLeftoverTestData(string $type): void
     Volume::where('name', "Integration Test Volume ({$type})")->first()?->delete();
 }
 
-function integrationFindLatestBackupFile(): ?string
+function integrationCreateSqliteDatabaseServer(string $sqlitePath): DatabaseServer
 {
-    $files = glob('/tmp/backups/*.sql.gz');
-    if (empty($files)) {
+    return DatabaseServer::create([
+        'name' => 'Integration Test SQLite Server',
+        'database_type' => 'sqlite',
+        'sqlite_path' => $sqlitePath,
+        'description' => 'Integration test SQLite database',
+    ]);
+}
+
+function integrationCreateTestSqliteDatabase(string $path): void
+{
+    // Remove if exists
+    if (file_exists($path)) {
+        unlink($path);
+    }
+
+    // Create a new SQLite database with test data
+    $pdo = new PDO("sqlite:{$path}");
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $pdo->exec('CREATE TABLE test_table (id INTEGER PRIMARY KEY, name TEXT, value INTEGER)');
+    $pdo->exec("INSERT INTO test_table (name, value) VALUES ('item1', 100)");
+    $pdo->exec("INSERT INTO test_table (name, value) VALUES ('item2', 200)");
+    $pdo->exec("INSERT INTO test_table (name, value) VALUES ('item3', 300)");
+}
+
+function integrationFindLatestBackupFile(?string $extension = null): ?string
+{
+    // Search for both .sql.gz and .db.gz (SQLite) files
+    $patterns = $extension
+        ? ["/tmp/backups/*.{$extension}"]
+        : ['/tmp/backups/*.sql.gz', '/tmp/backups/*.db.gz'];
+
+    $allFiles = [];
+    foreach ($patterns as $pattern) {
+        $files = glob($pattern);
+        if ($files) {
+            $allFiles = array_merge($allFiles, $files);
+        }
+    }
+
+    if (empty($allFiles)) {
         return null;
     }
 
-    usort($files, fn ($a, $b) => filemtime($b) <=> filemtime($a));
+    usort($allFiles, fn ($a, $b) => filemtime($b) <=> filemtime($a));
 
-    return $files[0];
+    return $allFiles[0];
 }
 
 function integrationIsGzipped(string $filePath): bool
