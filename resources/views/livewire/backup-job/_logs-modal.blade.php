@@ -142,24 +142,15 @@
                                         <x-slot:content>
                                             <div class="pl-4 pr-4 pb-4 space-y-3">
                                                 @if($log['type'] === 'command')
-                                                    <!-- Full Command -->
-                                                    <div>
-                                                        <div class="text-xs text-base-content/50 mb-1">{{ __('Full Command') }}</div>
-                                                        <div class="bg-base-300 p-3 rounded font-mono text-sm overflow-x-auto">
-                                                            <code class="text-success">$ {{ $log['command'] }}</code>
-                                                        </div>
+                                                    <!-- Command & Output -->
+                                                    <div class="mockup-code text-sm max-h-64 overflow-auto">
+                                                        <pre data-prefix="$"><code>{{ $log['command'] }}</code></pre>
+                                                        @if(isset($log['output']) && !empty(trim($log['output'])))
+                                                            @foreach(explode("\n", trim($log['output'])) as $line)
+                                                                <pre data-prefix=">"><code>{{ $line }}</code></pre>
+                                                            @endforeach
+                                                        @endif
                                                     </div>
-
-                                                    @if(isset($log['output']) && !empty(trim($log['output'])))
-                                                        <div>
-                                                            <div class="text-xs text-base-content/50 mb-1">{{ __('Output') }}</div>
-                                                            <div class="bg-base-300 p-3 rounded font-mono text-xs overflow-x-auto max-h-48 overflow-y-auto">
-                                                                <pre class="text-base-content/80 whitespace-pre-wrap">{{ trim($log['output']) }}</pre>
-                                                            </div>
-                                                        </div>
-                                                    @else
-                                                        <div class="text-xs text-base-content/50 mb-1">{{ __('No output') }}</div>
-                                                    @endif
 
                                                     @if($isRunning || isset($log['exit_code']) || isset($log['duration_ms']))
                                                         <div class="flex items-center gap-2">
