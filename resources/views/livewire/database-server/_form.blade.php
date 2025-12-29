@@ -168,7 +168,7 @@ $volumes = \App\Models\Volume::orderBy('name')->get()->map(fn($v) => [
                         {{ __('Loading databases...') }}
                     </div>
                 @elseif(count($form->availableDatabases) > 0)
-                    <x-choices
+                    <x-choices-offline
                         wire:model="form.database_names"
                         label="{{ __('Select Databases') }}"
                         :options="$form->availableDatabases"
