@@ -87,7 +87,7 @@ sudo apt install -y nodejs
 sudo apt install -y nginx
 ```
 
-## Step 6: Download and Configure Databasement
+## Download and Configure Databasement
 
 ```bash
 # Clone the repository
@@ -160,7 +160,7 @@ cd /var/www/databasement
 php artisan migrate --force
 ```
 
-## Step 10: Configure Nginx
+## Configure Nginx
 
 Create a new Nginx configuration:
 
@@ -213,7 +213,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-## Step 9: Configure Queue Worker (Systemd)
+## Configure Queue Worker (Systemd)
 
 The queue worker is **required** to process backup and restore jobs.
 
