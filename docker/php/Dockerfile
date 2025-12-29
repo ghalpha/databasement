@@ -22,6 +22,7 @@ RUN install-php-extensions \
     pcov
 
 COPY --from=composer/composer:latest-bin /composer /usr/bin/composer
+
 # Add DB CLI tools used by the app: mysqldump, mysql, pg_dump, psql
 RUN apk add --no-cache git \
         mariadb-client mariadb-connector-c \
