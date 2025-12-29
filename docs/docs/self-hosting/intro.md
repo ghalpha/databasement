@@ -34,12 +34,12 @@ The fastest way to try Databasement:
 ```bash
 docker run -d \
   --name databasement \
-  -p 8000:8000 \
+  -p 2226:2226 \
   -v databasement-data:/app/storage \
   davidcrty/databasement:latest
 ```
 
-Then open http://localhost:8000 in your browser.
+Then open http://localhost:2226 in your browser.
 
 :::note
 This quick start uses SQLite for the application database. For production deployments, see the [Docker guide](docker) for recommended configurations.

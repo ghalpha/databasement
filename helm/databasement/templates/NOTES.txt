@@ -11,9 +11,9 @@ Access the application at:
 {{- else }}
 
 Access the application via port-forward:
-  kubectl port-forward svc/{{ $fullName }} 8080:{{ .Values.service.port }} -n {{ $namespace }}
+  kubectl port-forward svc/{{ $fullName }} 2226:{{ .Values.service.port }} -n {{ $namespace }}
 
-Then open: http://localhost:8080
+Then open: http://localhost:2226
 
 {{- end }}
 

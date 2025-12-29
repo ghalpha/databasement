@@ -36,7 +36,7 @@ should render deployment with default values:
                 - name: APP_DEBUG
                   value: "false"
                 - name: APP_URL
-                  value: http://localhost:8000
+                  value: http://localhost:2226
                 - name: APP_KEY
                   valueFrom:
                     secretKeyRef:
@@ -63,7 +63,7 @@ should render deployment with default values:
                 timeoutSeconds: 5
               name: databasement
               ports:
-                - containerPort: 8000
+                - containerPort: 2226
                   name: http
                   protocol: TCP
               readinessProbe:
@@ -101,7 +101,7 @@ should render deployment with default values:
                 - name: APP_DEBUG
                   value: "false"
                 - name: APP_URL
-                  value: http://localhost:8000
+                  value: http://localhost:2226
                 - name: APP_KEY
                   valueFrom:
                     secretKeyRef:
@@ -147,7 +147,7 @@ should render deployment with default values:
                 - name: APP_DEBUG
                   value: "false"
                 - name: APP_URL
-                  value: http://localhost:8000
+                  value: http://localhost:2226
                 - name: APP_KEY
                   valueFrom:
                     secretKeyRef:
@@ -218,7 +218,7 @@ should render deployment with mysql database:
                 - name: APP_DEBUG
                   value: "false"
                 - name: APP_URL
-                  value: http://localhost:8000
+                  value: http://localhost:2226
                 - name: APP_KEY
                   valueFrom:
                     secretKeyRef:
@@ -256,7 +256,7 @@ should render deployment with mysql database:
                 timeoutSeconds: 5
               name: databasement
               ports:
-                - containerPort: 8000
+                - containerPort: 2226
                   name: http
                   protocol: TCP
               readinessProbe:
@@ -294,7 +294,7 @@ should render deployment with mysql database:
                 - name: APP_DEBUG
                   value: "false"
                 - name: APP_URL
-                  value: http://localhost:8000
+                  value: http://localhost:2226
                 - name: APP_KEY
                   valueFrom:
                     secretKeyRef:
@@ -351,7 +351,7 @@ should render deployment with mysql database:
                 - name: APP_DEBUG
                   value: "false"
                 - name: APP_URL
-                  value: http://localhost:8000
+                  value: http://localhost:2226
                 - name: APP_KEY
                   valueFrom:
                     secretKeyRef:

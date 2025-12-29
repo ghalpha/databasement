@@ -21,7 +21,7 @@ docker volume create databasement-data
 # Run the container
 docker run -d \
   --name databasement \
-  -p 8000:8000 \
+  -p 2226:2226 \
   -e APP_KEY=$APP_KEY \
   -e DB_CONNECTION=sqlite \
   -e DB_DATABASE=/data/database.sqlite \
@@ -34,7 +34,7 @@ docker run -d \
 The `ENABLE_QUEUE_WORKER=true` environment variable enables the background queue worker inside the container. This is required for processing backup and restore jobs. When using Docker Compose, the worker runs as a separate service instead.
 :::
 
-Access the application at http://localhost:8000
+Access the application at http://localhost:2226
 
 ## Production Setup (External Database)
 

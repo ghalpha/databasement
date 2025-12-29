@@ -105,7 +105,7 @@ docker compose restart queue    # Restart queue worker (after code changes)
 ```
 
 The Docker setup provides:
-- **php**: FrankenPHP server on port 8081 (http://localhost:8081)
+- **php**: FrankenPHP server on port 2226 (http://localhost:2226)
 - **queue**: Queue worker processing backup/restore jobs
 - **mysql**: MySQL 8.0 on port 3306 (user: admin, password: admin, db: testdb)
 - **postgres**: PostgreSQL 16 on port 5432 (user: admin, password: admin, db: testdb)

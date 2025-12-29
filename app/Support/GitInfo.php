@@ -57,7 +57,7 @@ class GitInfo
     {
         $output = [];
         $exitCode = 0;
-        exec("git -C ".escapeshellarg(base_path())." {$command} 2>/dev/null", $output, $exitCode);
+        exec('git -C '.escapeshellarg(base_path())." {$command} 2>/dev/null", $output, $exitCode);
 
         return $exitCode === 0 && ! empty($output[0]) ? trim($output[0]) : null;
     }

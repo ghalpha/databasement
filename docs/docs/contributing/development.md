@@ -36,7 +36,7 @@ make start
 ```
 
 This starts all Docker services:
-- **php** — FrankenPHP server on http://localhost:8081
+- **php** — FrankenPHP server on http://localhost:2226
 - **queue** — Queue worker for async backup/restore jobs
 - **mysql** — MySQL 8.0 on port 3306
 - **postgres** — PostgreSQL 16 on port 5432
@@ -164,7 +164,7 @@ Key development configuration:
 
 ```env
 # Application
-APP_URL=http://localhost:8081
+APP_URL=http://localhost:2226
 
 # Database (for application data)
 DB_CONNECTION=sqlite

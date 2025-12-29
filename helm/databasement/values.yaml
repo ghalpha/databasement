@@ -19,7 +19,7 @@ app:
   name: Databasement
   env: production
   debug: false
-  url: http://localhost:8000
+  url: http://localhost:2226
   # Application encryption key (required)
   # Generate with: docker run --rm davidcrty/databasement:latest php artisan key:generate --show
   appKey:
@@ -149,7 +149,7 @@ securityContext:
 service:
   type: ClusterIP
   port: 80
-  targetPort: 8000
+  targetPort: 2226
 
 nodeSelector: {}
 

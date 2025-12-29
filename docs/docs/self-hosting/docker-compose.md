@@ -35,16 +35,16 @@ services:
     container_name: databasement
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "2226:2226"
     environment:
-      APP_URL: http://localhost:8000
+      APP_URL: http://localhost:2226
       APP_KEY: base64:your-generated-key-here
       DB_CONNECTION: sqlite # or mysql, postgres
       DB_DATABASE: /data/database.sqlite
     volumes:
       - app-data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      test: ["CMD", "curl", "-f", "http://localhost:2226"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -55,7 +55,7 @@ services:
     restart: unless-stopped
     command: sh -c "php artisan db:wait && php artisan queue:work --queue=backups,default --tries=3 --timeout=3600 --sleep=3 --max-jobs=1000"
     environment:
-      APP_URL: http://localhost:8000
+      APP_URL: http://localhost:2226
       APP_KEY: base64:your-generated-key-here
       DB_CONNECTION: sqlite # or mysql, postgres
       DB_DATABASE: /data/database.sqlite
@@ -80,7 +80,7 @@ docker compose up -d
 
 ### 5. Access the Application
 
-Open http://localhost:8000 in your browser.
+Open http://localhost:2226 in your browser.
 
 :::note
 To expose your Databasement instance with HTTPS, you can use Traefik as a reverse proxy. For detailed instructions on

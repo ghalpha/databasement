@@ -55,7 +55,7 @@ Databasement is designed to be self-hosted. We provide several deployment option
 
 ```bash
 docker run -d \
-  -p 8000:8000 \
+  -p 2226:2226 \
   -e DB_CONNECTION=sqlite \
   -e DB_DATABASE=/data/database.sqlite \
   -e ENABLE_QUEUE_WORKER=true \
@@ -63,7 +63,7 @@ docker run -d \
   davidcrty/databasement:latest
 ```
 
-Open http://localhost:8000 and create your first admin account.
+Open http://localhost:2226 and create your first admin account.
 
 For production deployments, see our [configuration guide](https://david-crty.github.io/databasement/self-hosting/configuration) for environment variables and best practices.
 

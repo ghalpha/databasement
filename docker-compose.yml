@@ -8,7 +8,7 @@ services:
       - .:/app
       - app-data:/data
     ports:
-      - "8001:8000"
+      - "2226:2226"
     environment:
       AWS_ACCESS_KEY_ID: localstack
       AWS_SECRET_ACCESS_KEY: localstack
