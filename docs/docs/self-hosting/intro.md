@@ -15,6 +15,7 @@ We provide guides to deploy Databasement using:
 - [**Docker**](docker) - Single container deployment (recommended for most users)
 - [**Docker Compose**](docker-compose) - Multi-container setup with external database
 - [**Kubernetes + Helm**](kubernetes-helm) - For Kubernetes clusters
+- [**Native Ubuntu**](native-ubuntu) - Traditional installation without Docker
 
 ## Requirements
 
