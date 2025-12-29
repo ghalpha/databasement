@@ -12,6 +12,7 @@ use App\Models\DatabaseServer;
 use App\Models\Volume;
 use App\Services\Backup\BackupJobFactory;
 use App\Services\Backup\BackupTask;
+use App\Services\Backup\Filesystems\FilesystemProvider;
 use App\Services\Backup\RestoreTask;
 
 uses()->group('integration');
@@ -20,6 +21,7 @@ beforeEach(function () {
     $this->backupTask = app(BackupTask::class);
     $this->restoreTask = app(RestoreTask::class);
     $this->backupJobFactory = app(BackupJobFactory::class);
+    $this->filesystemProvider = app(FilesystemProvider::class);
 
     $this->volume = null;
     $this->databaseServer = null;
@@ -67,14 +69,11 @@ test('client-server database backup and restore workflow', function (string $typ
     $this->snapshot->refresh();
     $this->snapshot->load('job');
 
-    expect($this->snapshot->job->status)->toBe('completed');
-    expect($this->snapshot->file_size)->toBeGreaterThan(0);
+    $filesystem = $this->filesystemProvider->getForVolume($this->snapshot->volume);
 
-    // Verify backup file
-    $backupFile = integrationFindLatestBackupFile();
-    expect($backupFile)->not->toBeNull();
-    expect(filesize($backupFile))->toBeGreaterThan(100);
-    expect(integrationIsGzipped($backupFile))->toBeTrue();
+    expect($this->snapshot->job->status)->toBe('completed')
+        ->and($this->snapshot->file_size)->toBeGreaterThan(0)
+        ->and($filesystem->fileExists($this->snapshot->getStoragePath()))->toBeTrue();
 
     // Run restore
     $this->restoredDatabaseName = 'testdb_restored_'.time();
@@ -121,15 +120,12 @@ test('sqlite backup and restore workflow', function () {
     $this->snapshot->refresh();
     $this->snapshot->load('job');
 
-    expect($this->snapshot->job->status)->toBe('completed');
-    expect($this->snapshot->file_size)->toBeGreaterThan(0);
-    expect($this->snapshot->getDatabaseServerMetadata()['host'])->toBeNull();
+    $filesystem = $this->filesystemProvider->getForVolume($this->snapshot->volume);
 
-    // Verify backup file
-    $backupFile = integrationFindLatestBackupFile();
-    expect($backupFile)->not->toBeNull();
-    expect(filesize($backupFile))->toBeGreaterThan(100);
-    expect(integrationIsGzipped($backupFile))->toBeTrue();
+    expect($this->snapshot->job->status)->toBe('completed')
+        ->and($this->snapshot->file_size)->toBeGreaterThan(0)
+        ->and($this->snapshot->getDatabaseServerMetadata()['host'])->toBeNull()
+        ->and($filesystem->fileExists($this->snapshot->getStoragePath()))->toBeTrue();
 
     // Create a target server for restore (different sqlite file)
     $targetServer = integrationCreateSqliteDatabaseServer($restoredSqlitePath);
@@ -233,45 +229,6 @@ function integrationCreateTestSqliteDatabase(string $path): void
     $pdo->exec("INSERT INTO test_table (name, value) VALUES ('item1', 100)");
     $pdo->exec("INSERT INTO test_table (name, value) VALUES ('item2', 200)");
     $pdo->exec("INSERT INTO test_table (name, value) VALUES ('item3', 300)");
-}
-
-function integrationFindLatestBackupFile(?string $extension = null): ?string
-{
-    $backupDir = config('backup.tmp_folder');
-
-    // Search for both .sql.gz and .db.gz (SQLite) files
-    $patterns = $extension
-        ? ["{$backupDir}/*.{$extension}"]
-        : ["{$backupDir}/*.sql.gz", "{$backupDir}/*.db.gz"];
-
-    $allFiles = [];
-    foreach ($patterns as $pattern) {
-        $files = glob($pattern);
-        if ($files) {
-            $allFiles = array_merge($allFiles, $files);
-        }
-    }
-
-    if (empty($allFiles)) {
-        return null;
-    }
-
-    usort($allFiles, fn ($a, $b) => filemtime($b) <=> filemtime($a));
-
-    return $allFiles[0];
-}
-
-function integrationIsGzipped(string $filePath): bool
-{
-    $handle = fopen($filePath, 'r');
-    if ($handle === false) {
-        return false;
-    }
-
-    $header = fread($handle, 2);
-    fclose($handle);
-
-    return $header !== false && bin2hex($header) === '1f8b';
 }
 
 function integrationConnectToDatabase(string $type, DatabaseServer $server, string $databaseName): PDO
