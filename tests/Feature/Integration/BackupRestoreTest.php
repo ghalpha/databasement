@@ -48,8 +48,6 @@ afterEach(function () {
 });
 
 test('client-server database backup and restore workflow', function (string $type) {
-    integrationCleanupLeftoverTestData($type);
-
     // Create models
     $this->volume = integrationCreateVolume($type);
     $this->databaseServer = integrationCreateDatabaseServer($type);
@@ -63,7 +61,6 @@ test('client-server database backup and restore workflow', function (string $typ
     $snapshots = $this->backupJobFactory->createSnapshots(
         server: $this->databaseServer,
         method: 'manual',
-        triggeredByUserId: null
     );
     $this->snapshot = $snapshots[0];
     $this->backupTask->run($this->snapshot);
@@ -101,8 +98,6 @@ test('client-server database backup and restore workflow', function (string $typ
 })->with(['mysql', 'postgres']);
 
 test('sqlite backup and restore workflow', function () {
-    integrationCleanupLeftoverTestData('sqlite');
-
     // Create a test SQLite database with some data
     $backupDir = config('backup.tmp_folder');
     $sourceSqlitePath = "{$backupDir}/test_source.sqlite";
@@ -211,22 +206,6 @@ function integrationCreateBackup(DatabaseServer $server, Volume $volume): Backup
         'volume_id' => $volume->id,
         'recurrence' => 'manual',
     ]);
-}
-
-function integrationCleanupLeftoverTestData(string $type): void
-{
-    $serverName = match ($type) {
-        'mysql' => 'Integration Test MySQL Server',
-        'postgres' => 'Integration Test PostgreSQL Server',
-        'sqlite' => 'Integration Test SQLite Server',
-        default => null,
-    };
-
-    if ($serverName) {
-        DatabaseServer::where('name', $serverName)->first()?->delete();
-    }
-
-    Volume::where('name', "Integration Test Volume ({$type})")->first()?->delete();
 }
 
 function integrationCreateSqliteDatabaseServer(string $sqlitePath): DatabaseServer
