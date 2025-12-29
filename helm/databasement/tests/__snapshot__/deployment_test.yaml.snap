@@ -30,7 +30,7 @@ should render deployment with default values:
           containers:
             - env:
                 - name: SERVER_NAME
-                  value: :8080
+                  value: :2226
                 - name: APP_NAME
                   value: Databasement
                 - name: APP_ENV
@@ -38,7 +38,7 @@ should render deployment with default values:
                 - name: APP_DEBUG
                   value: "false"
                 - name: APP_URL
-                  value: http://localhost:8080
+                  value: http://localhost:2226
                 - name: APP_KEY
                   valueFrom:
                     secretKeyRef:
@@ -65,7 +65,7 @@ should render deployment with default values:
                 timeoutSeconds: 5
               name: databasement
               ports:
-                - containerPort: 8080
+                - containerPort: 2226
                   name: http
                   protocol: TCP
               readinessProbe:
@@ -75,7 +75,13 @@ should render deployment with default values:
                   port: http
                 periodSeconds: 5
                 timeoutSeconds: 3
-              resources: null
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
               securityContext:
                 runAsGroup: 1000
                 runAsNonRoot: true
@@ -97,7 +103,7 @@ should render deployment with default values:
                 - php artisan db:wait && php artisan db:wait --check-migrations && php artisan queue:work --queue=backups,default --tries=3 --timeout=3600 --sleep=3 --max-jobs=1000
               env:
                 - name: SERVER_NAME
-                  value: :8080
+                  value: :2226
                 - name: APP_NAME
                   value: Databasement
                 - name: APP_ENV
@@ -105,7 +111,7 @@ should render deployment with default values:
                 - name: APP_DEBUG
                   value: "false"
                 - name: APP_URL
-                  value: http://localhost:8080
+                  value: http://localhost:2226
                 - name: APP_KEY
                   valueFrom:
                     secretKeyRef:
@@ -145,7 +151,7 @@ should render deployment with default values:
                 - php artisan db:wait && php artisan migrate --force
               env:
                 - name: SERVER_NAME
-                  value: :8080
+                  value: :2226
                 - name: APP_NAME
                   value: Databasement
                 - name: APP_ENV
@@ -153,7 +159,7 @@ should render deployment with default values:
                 - name: APP_DEBUG
                   value: "false"
                 - name: APP_URL
-                  value: http://localhost:8080
+                  value: http://localhost:2226
                 - name: APP_KEY
                   valueFrom:
                     secretKeyRef:
@@ -172,6 +178,13 @@ should render deployment with default values:
               image: davidcrty/databasement:latest
               imagePullPolicy: Always
               name: databasement-migrations
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
               securityContext:
                 runAsGroup: 1000
                 runAsNonRoot: true
@@ -218,7 +231,7 @@ should render deployment with mysql database:
           containers:
             - env:
                 - name: SERVER_NAME
-                  value: :8080
+                  value: :2226
                 - name: APP_NAME
                   value: Databasement
                 - name: APP_ENV
@@ -226,7 +239,7 @@ should render deployment with mysql database:
                 - name: APP_DEBUG
                   value: "false"
                 - name: APP_URL
-                  value: http://localhost:8080
+                  value: http://localhost:2226
                 - name: APP_KEY
                   valueFrom:
                     secretKeyRef:
@@ -264,7 +277,7 @@ should render deployment with mysql database:
                 timeoutSeconds: 5
               name: databasement
               ports:
-                - containerPort: 8080
+                - containerPort: 2226
                   name: http
                   protocol: TCP
               readinessProbe:
@@ -274,7 +287,13 @@ should render deployment with mysql database:
                   port: http
                 periodSeconds: 5
                 timeoutSeconds: 3
-              resources: null
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
               securityContext:
                 runAsGroup: 1000
                 runAsNonRoot: true
@@ -296,7 +315,7 @@ should render deployment with mysql database:
                 - php artisan db:wait && php artisan db:wait --check-migrations && php artisan queue:work --queue=backups,default --tries=3 --timeout=3600 --sleep=3 --max-jobs=1000
               env:
                 - name: SERVER_NAME
-                  value: :8080
+                  value: :2226
                 - name: APP_NAME
                   value: Databasement
                 - name: APP_ENV
@@ -304,7 +323,7 @@ should render deployment with mysql database:
                 - name: APP_DEBUG
                   value: "false"
                 - name: APP_URL
-                  value: http://localhost:8080
+                  value: http://localhost:2226
                 - name: APP_KEY
                   valueFrom:
                     secretKeyRef:
@@ -355,7 +374,7 @@ should render deployment with mysql database:
                 - php artisan db:wait && php artisan migrate --force
               env:
                 - name: SERVER_NAME
-                  value: :8080
+                  value: :2226
                 - name: APP_NAME
                   value: Databasement
                 - name: APP_ENV
@@ -363,7 +382,7 @@ should render deployment with mysql database:
                 - name: APP_DEBUG
                   value: "false"
                 - name: APP_URL
-                  value: http://localhost:8080
+                  value: http://localhost:2226
                 - name: APP_KEY
                   valueFrom:
                     secretKeyRef:
@@ -393,6 +412,13 @@ should render deployment with mysql database:
               image: davidcrty/databasement:latest
               imagePullPolicy: Always
               name: databasement-migrations
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
               securityContext:
                 runAsGroup: 1000
                 runAsNonRoot: true

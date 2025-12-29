@@ -14,14 +14,14 @@ fullnameOverride: ""
 
 deploymentStrategy: ""
 
-port: 8080
+port: 2226
 
 # Application configuration
 app:
   name: Databasement
   env: production
   debug: false
-  url: http://localhost:8080
+  url: http://localhost:2226
   # Application encryption key (required)
   # Generate with: docker run --rm davidcrty/databasement:latest php artisan key:generate --show
   appKey:
@@ -48,7 +48,13 @@ database:
 #    fromSecret:
 #      secretName: ""
 #      secretKey: ""
-
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
 # Extra environment variables to add to app and worker containers
 # See available variables on https://david-crty.github.io/databasement/self-hosting/configuration
 extraEnv: {}
