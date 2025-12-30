@@ -4,6 +4,7 @@ use App\Exceptions\ShellProcessFailed;
 use App\Models\BackupJob;
 use App\Services\Backup\ShellProcessor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 
 uses(RefreshDatabase::class);
 
@@ -16,6 +17,9 @@ test('process returns command output', function () {
 });
 
 test('process throws exception on failed command', function () {
+    // Silence expected error log output
+    Log::spy();
+
     $processor = new ShellProcessor;
 
     $processor->process('exit 1');
@@ -46,6 +50,9 @@ test('process logs command execution lifecycle', function () {
 });
 
 test('process logs failed command with error status', function () {
+    // Silence expected error log output
+    Log::spy();
+
     $backupJob = BackupJob::create([
         'status' => 'running',
     ]);
