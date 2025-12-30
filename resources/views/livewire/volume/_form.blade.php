@@ -1,4 +1,4 @@
-@props(['form', 'submitLabel' => 'Save', 'cancelRoute' => 'volumes.index'])
+@props(['form', 'submitLabel' => 'Save', 'cancelRoute' => 'volumes.index', 'readonly' => false])
 
 @php
 $storageTypes = [
@@ -24,6 +24,7 @@ $storageTypes = [
             wire:model.live="form.type"
             label="{{ __('Storage Type') }}"
             :options="$storageTypes"
+            :disabled="$readonly"
             required
         />
     </div>
@@ -41,32 +42,38 @@ $storageTypes = [
                 label="{{ __('Path') }}"
                 placeholder="{{ __('e.g., /var/backups or /mnt/backup-storage') }}"
                 type="text"
+                :disabled="$readonly"
                 required
             />
 
-            <p class="text-sm opacity-70">
-                {{ __('Specify the absolute path where backups will be stored on the local filesystem.') }}
-            </p>
+            @unless($readonly)
+                <p class="text-sm opacity-70">
+                    {{ __('Specify the absolute path where backups will be stored on the local filesystem.') }}
+                </p>
+            @endunless
         @elseif($form->type === 's3')
             <!-- S3 Config -->
-            <x-alert class="alert-info" icon="o-information-circle">
-                {{ __('S3 credentials are configured via environment variables.') }}
-                <x-slot:actions>
-                    <x-button
-                        label="{{ __('View S3 Configuration Docs') }}"
-                        link="https://david-crty.github.io/databasement/self-hosting/configuration#s3-storage"
-                        external
-                        class="btn-ghost btn-sm"
-                        icon="o-arrow-top-right-on-square"
-                    />
-                </x-slot:actions>
-            </x-alert>
+            @unless($readonly)
+                <x-alert class="alert-info" icon="o-information-circle">
+                    {{ __('S3 credentials are configured via environment variables.') }}
+                    <x-slot:actions>
+                        <x-button
+                            label="{{ __('View S3 Configuration Docs') }}"
+                            link="https://david-crty.github.io/databasement/self-hosting/configuration#s3-storage"
+                            external
+                            class="btn-ghost btn-sm"
+                            icon="o-arrow-top-right-on-square"
+                        />
+                    </x-slot:actions>
+                </x-alert>
+            @endunless
 
             <x-input
                 wire:model="form.bucket"
                 label="{{ __('S3 Bucket Name') }}"
                 placeholder="{{ __('e.g., my-backup-bucket') }}"
                 type="text"
+                :disabled="$readonly"
                 required
             />
 
@@ -75,11 +82,14 @@ $storageTypes = [
                 label="{{ __('Prefix (Optional)') }}"
                 placeholder="{{ __('e.g., backups/production/') }}"
                 type="text"
+                :disabled="$readonly"
             />
 
-            <p class="text-sm opacity-70">
-                {{ __('The prefix is prepended to all backup file paths in the S3 bucket.') }}
-            </p>
+            @unless($readonly)
+                <p class="text-sm opacity-70">
+                    {{ __('The prefix is prepended to all backup file paths in the S3 bucket.') }}
+                </p>
+            @endunless
         @endif
 
         <!-- Test Connection Button -->

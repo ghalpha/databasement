@@ -14,19 +14,13 @@ class Edit extends Component
 
     public VolumeForm $form;
 
+    public bool $hasSnapshots = false;
+
     public function mount(Volume $volume): void
     {
         $this->authorize('update', $volume);
 
-        // Prevent editing volumes that have snapshots
-        if ($volume->hasSnapshots()) {
-            session()->flash('error', __('Cannot edit volume: it has existing snapshots.'));
-
-            $this->redirect(route('volumes.index'), navigate: true);
-
-            return;
-        }
-
+        $this->hasSnapshots = $volume->hasSnapshots();
         $this->form->setVolume($volume);
     }
 
@@ -34,7 +28,11 @@ class Edit extends Component
     {
         $this->authorize('update', $this->form->volume);
 
-        $this->form->update();
+        if ($this->hasSnapshots) {
+            $this->form->updateNameOnly();
+        } else {
+            $this->form->update();
+        }
 
         session()->flash('status', 'Volume updated successfully!');
 

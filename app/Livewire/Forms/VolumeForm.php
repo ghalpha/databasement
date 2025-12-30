@@ -94,6 +94,17 @@ class VolumeForm extends Form
         ]);
     }
 
+    public function updateNameOnly(): void
+    {
+        $this->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:volumes,name,'.$this->volume->id],
+        ]);
+
+        $this->volume->update([
+            'name' => $this->name,
+        ]);
+    }
+
     /**
      * @return array<string, string>
      */

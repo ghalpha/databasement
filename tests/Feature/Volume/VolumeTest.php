@@ -173,7 +173,7 @@ test('can delete volume', function () {
 });
 
 // Immutability Tests
-test('cannot edit volume with snapshots', function () {
+test('volume with snapshots only allows name editing', function () {
     $user = User::factory()->create();
 
     // Create a volume with a snapshot
@@ -186,11 +186,23 @@ test('cannot edit volume with snapshots', function () {
     // Verify volume now has snapshots
     expect($volume->hasSnapshots())->toBeTrue();
 
-    // Accessing edit page should redirect with error
+    $originalPath = $volume->config['path'];
+
+    // Can access edit page with hasSnapshots flag set
     Livewire::actingAs($user)
         ->test(Edit::class, ['volume' => $volume])
-        ->assertRedirect(route('volumes.index'))
-        ->assertSessionHas('error', 'Cannot edit volume: it has existing snapshots.');
+        ->assertSuccessful()
+        ->assertSet('hasSnapshots', true)
+        ->assertSet('form.name', $volume->name)
+        // Can update name
+        ->set('form.name', 'Updated Volume Name')
+        ->call('save')
+        ->assertRedirect(route('volumes.index'));
+
+    // Verify only name was updated, config unchanged
+    $volume->refresh();
+    expect($volume->name)->toBe('Updated Volume Name');
+    expect($volume->config['path'])->toBe($originalPath);
 });
 
 test('can edit volume without snapshots', function () {
