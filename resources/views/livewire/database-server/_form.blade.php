@@ -1,11 +1,7 @@
 @props(['form', 'submitLabel' => 'Save', 'cancelRoute' => 'database-servers.index', 'isEdit' => false])
 
 @php
-$databaseTypes = [
-    ['id' => 'mysql', 'name' => 'MySQL / MariaDB'],
-    ['id' => 'postgres', 'name' => 'PostgreSQL'],
-    ['id' => 'sqlite', 'name' => 'SQLite'],
-];
+$databaseTypes = App\Enums\DatabaseType::toSelectOptions();
 
 $recurrenceOptions = collect(App\Models\Backup::RECURRENCE_TYPES)->map(fn($type) => [
     'id' => $type,

@@ -26,25 +26,6 @@ enum DatabaseType: string
         };
     }
 
-    public function buildDsn(string $host, int $port, ?string $database = null): string
-    {
-        return match ($this) {
-            self::MYSQL => sprintf(
-                'mysql:host=%s;port=%d%s;charset=utf8mb4',
-                $host,
-                $port,
-                $database ? ";dbname={$database}" : ''
-            ),
-            self::POSTGRESQL => sprintf(
-                'pgsql:host=%s;port=%d%s',
-                $host,
-                $port,
-                $database ? ";dbname={$database}" : ''
-            ),
-            self::SQLITE => "sqlite:{$host}",
-        };
-    }
-
     /**
      * Build DSN for administrative connections (without specific database)
      */

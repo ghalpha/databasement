@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Forms;
 
+use App\Enums\DatabaseType;
 use App\Exceptions\Backup\EncryptionException;
 use App\Facades\DatabaseConnectionTester;
 use App\Models\Backup;
@@ -57,6 +58,31 @@ class DatabaseServerForm extends Form
     public array $availableDatabases = [];
 
     public bool $loadingDatabases = false;
+
+    /**
+     * Called when database_type changes - update port to the default for that type
+     * if the current port is a known default port.
+     */
+    public function updatedDatabaseType(string $value): void
+    {
+        $defaultPorts = array_map(
+            fn (DatabaseType $type) => $type->defaultPort(),
+            DatabaseType::cases()
+        );
+
+        // Only auto-update if current port is one of the known defaults
+        if (in_array($this->port, $defaultPorts, true)) {
+            $newType = DatabaseType::tryFrom($value);
+            if ($newType) {
+                $this->port = $newType->defaultPort();
+            }
+        }
+
+        // Reset connection test when type changes
+        $this->connectionTestSuccess = false;
+        $this->connectionTestMessage = null;
+        $this->availableDatabases = [];
+    }
 
     public function setServer(DatabaseServer $server): void
     {
