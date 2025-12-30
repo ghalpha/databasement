@@ -52,15 +52,13 @@ class DemoModeMiddleware
      */
     protected function ensureDemoUserExists(): void
     {
-        $email = config('app.demo_user_email');
-
-        if (! User::where('email', $email)->exists()) {
-            User::create([
+        User::firstOrCreate(
+            ['email' => config('app.demo_user_email')],
+            [
                 'name' => 'Demo User',
-                'email' => $email,
                 'password' => bcrypt(config('app.demo_user_password')),
                 'role' => User::ROLE_DEMO,
-            ]);
-        }
+            ]
+        );
     }
 }
