@@ -45,10 +45,10 @@ class VolumePolicy
 
     /**
      * Determine whether the user can delete the model.
-     * Viewers cannot delete.
+     * Viewers and demo users cannot delete.
      */
     public function delete(User $user, Volume $volume): bool
     {
-        return $user->canPerformActions();
+        return $user->canPerformActions() && ! $user->isDemo();
     }
 }

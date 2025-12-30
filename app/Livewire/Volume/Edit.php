@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Volume;
 
+use App\Livewire\Concerns\HandlesDemoMode;
 use App\Livewire\Forms\VolumeForm;
 use App\Models\Volume;
 use Illuminate\Contracts\View\View;
@@ -11,6 +12,7 @@ use Livewire\Component;
 class Edit extends Component
 {
     use AuthorizesRequests;
+    use HandlesDemoMode;
 
     public VolumeForm $form;
 
@@ -26,6 +28,10 @@ class Edit extends Component
 
     public function save(): void
     {
+        if ($this->abortIfDemoMode('volumes.index')) {
+            return;
+        }
+
         $this->authorize('update', $this->form->volume);
 
         if ($this->hasSnapshots) {

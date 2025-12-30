@@ -2,6 +2,7 @@
 
 namespace App\Livewire\DatabaseServer;
 
+use App\Livewire\Concerns\HandlesDemoMode;
 use App\Livewire\Forms\DatabaseServerForm;
 use App\Models\DatabaseServer;
 use Illuminate\Contracts\View\View;
@@ -11,6 +12,7 @@ use Livewire\Component;
 class Create extends Component
 {
     use AuthorizesRequests;
+    use HandlesDemoMode;
 
     public DatabaseServerForm $form;
 
@@ -21,6 +23,10 @@ class Create extends Component
 
     public function save(): void
     {
+        if ($this->abortIfDemoMode('database-servers.index')) {
+            return;
+        }
+
         $this->authorize('create', DatabaseServer::class);
 
         if ($this->form->store()) {

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\DatabaseServer;
 
+use App\Livewire\Concerns\HandlesDemoMode;
 use App\Livewire\Forms\DatabaseServerForm;
 use App\Models\DatabaseServer;
 use Illuminate\Contracts\View\View;
@@ -11,6 +12,7 @@ use Livewire\Component;
 class Edit extends Component
 {
     use AuthorizesRequests;
+    use HandlesDemoMode;
 
     public DatabaseServerForm $form;
 
@@ -23,6 +25,10 @@ class Edit extends Component
 
     public function save(): void
     {
+        if ($this->abortIfDemoMode('database-servers.index')) {
+            return;
+        }
+
         $this->authorize('update', $this->form->server);
 
         if ($this->form->update()) {

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Volume;
 
+use App\Livewire\Concerns\HandlesDemoMode;
 use App\Livewire\Forms\VolumeForm;
 use App\Models\Volume;
 use Illuminate\Contracts\View\View;
@@ -11,6 +12,7 @@ use Livewire\Component;
 class Create extends Component
 {
     use AuthorizesRequests;
+    use HandlesDemoMode;
 
     public VolumeForm $form;
 
@@ -21,6 +23,10 @@ class Create extends Component
 
     public function save(): void
     {
+        if ($this->abortIfDemoMode('volumes.index')) {
+            return;
+        }
+
         $this->authorize('create', Volume::class);
 
         $this->form->store();
