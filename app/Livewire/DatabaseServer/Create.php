@@ -21,6 +21,13 @@ class Create extends Component
 
     public function save(): void
     {
+        if (auth()->user()->isDemo()) {
+            session()->flash('demo_notice', __('Demo mode is enabled. Changes cannot be saved.'));
+            $this->redirect(route('database-servers.index'), navigate: true);
+
+            return;
+        }
+
         $this->authorize('create', DatabaseServer::class);
 
         if ($this->form->store()) {

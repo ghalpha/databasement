@@ -21,6 +21,13 @@ class Create extends Component
 
     public function save(): void
     {
+        if (auth()->user()->isDemo()) {
+            session()->flash('demo_notice', __('Demo mode is enabled. Changes cannot be saved.'));
+            $this->redirect(route('volumes.index'), navigate: true);
+
+            return;
+        }
+
         $this->authorize('create', Volume::class);
 
         $this->form->store();

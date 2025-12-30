@@ -27,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->trustProxies(at: env('TRUSTED_PROXIES', '*'));
         $middleware->web(append: [
+            \App\Http\Middleware\DemoModeMiddleware::class,
             \App\Http\Middleware\EnsureUserIsActive::class,
         ]);
         $middleware->api(prepend: [

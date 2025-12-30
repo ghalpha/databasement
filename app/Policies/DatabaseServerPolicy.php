@@ -45,11 +45,11 @@ class DatabaseServerPolicy
 
     /**
      * Determine whether the user can delete the model.
-     * Viewers cannot delete.
+     * Viewers cannot delete nor demo users.
      */
     public function delete(User $user, DatabaseServer $databaseServer): bool
     {
-        return $user->canPerformActions();
+        return $user->canPerformActions() && ! $user->isDemo();
     }
 
     /**

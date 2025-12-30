@@ -27,11 +27,11 @@ class SnapshotPolicy
 
     /**
      * Determine whether the user can delete the model.
-     * Viewers cannot delete.
+     * Viewers cannot delete nor demo users
      */
     public function delete(User $user, Snapshot $snapshot): bool
     {
-        return $user->canPerformActions();
+        return $user->canPerformActions() && ! $user->isDemo();
     }
 
     /**

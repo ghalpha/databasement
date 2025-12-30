@@ -23,6 +23,13 @@ class Edit extends Component
 
     public function save(): void
     {
+        if (auth()->user()->isDemo()) {
+            session()->flash('demo_notice', __('Demo mode is enabled. Changes cannot be saved.'));
+            $this->redirect(route('database-servers.index'), navigate: true);
+
+            return;
+        }
+
         $this->authorize('update', $this->form->server);
 
         if ($this->form->update()) {

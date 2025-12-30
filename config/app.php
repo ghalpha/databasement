@@ -148,4 +148,18 @@ return [
 
     'commit_hash' => env('APP_COMMIT_HASH'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Demo Mode
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, guests are automatically logged in as a demo user with
+    | read-only access. The demo user can view all features but cannot
+    | create, edit, or delete resources.
+    |
+    */
+
+    'demo_mode' => env('DEMO_MODE', false),
+    'demo_user_email' => env('DEMO_USER_EMAIL', 'demo@example.com'),
+
 ];

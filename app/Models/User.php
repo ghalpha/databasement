@@ -68,6 +68,8 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable, TwoFactorAuthenticatable;
 
+    public const ROLE_DEMO = 'demo';
+
     public const ROLE_VIEWER = 'viewer';
 
     public const ROLE_MEMBER = 'member';
@@ -75,6 +77,7 @@ class User extends Authenticatable
     public const ROLE_ADMIN = 'admin';
 
     public const ROLES = [
+        self::ROLE_DEMO,
         self::ROLE_VIEWER,
         self::ROLE_MEMBER,
         self::ROLE_ADMIN,
@@ -138,6 +141,11 @@ class User extends Authenticatable
     public function triggeredSnapshots(): HasMany
     {
         return $this->hasMany(Snapshot::class, 'triggered_by_user_id');
+    }
+
+    public function isDemo(): bool
+    {
+        return $this->role === self::ROLE_DEMO;
     }
 
     public function isViewer(): bool
