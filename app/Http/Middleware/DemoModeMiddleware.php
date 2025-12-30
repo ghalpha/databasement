@@ -11,30 +11,6 @@ use Symfony\Component\HttpFoundation\Response;
 class DemoModeMiddleware
 {
     /**
-     * Routes that should not trigger auto-login.
-     * These are auth-related routes where guests need to remain guests.
-     *
-     * @var array<string>
-     */
-    protected array $excludedRoutes = [
-        'login',
-        'login.store',
-        'register',
-        'register.store',
-        'password.request',
-        'password.email',
-        'password.reset',
-        'password.update',
-        'two-factor.login',
-        'two-factor.login.store',
-        'verification.notice',
-        'verification.verify',
-        'verification.send',
-        'invitation.accept',
-        'demo.logout',
-    ];
-
-    /**
      * Routes that demo users are not allowed to access.
      *
      * @var array<string>
@@ -48,7 +24,7 @@ class DemoModeMiddleware
 
     /**
      * Handle an incoming request.
-     * If demo mode is enabled and user is guest, auto-login as demo user.
+     * In demo mode, ensure demo user exists and restrict demo users from certain routes.
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -56,48 +32,35 @@ class DemoModeMiddleware
             return $next($request);
         }
 
-        // If user is already logged in, don't replace them
-        if (Auth::check()) {
-            // Block demo users from restricted routes
-            if (Auth::user()->isDemo()) {
-                if (in_array($request->route()?->getName(), $this->restrictedRoutesForDemo)) {
-                    abort(403);
-                }
+        // Ensure demo user exists when visiting login page
+        if ($request->route()?->getName() === 'login') {
+            $this->ensureDemoUserExists();
+        }
+
+        // Block demo users from restricted routes
+        if (Auth::check() && Auth::user()->isDemo()) {
+            if (in_array($request->route()?->getName(), $this->restrictedRoutesForDemo)) {
+                abort(403);
             }
-
-            return $next($request);
         }
-
-        // Skip auto-login for auth-related routes (let guests access login/register)
-        if (in_array($request->route()?->getName(), $this->excludedRoutes)) {
-            return $next($request);
-        }
-
-        // Skip auto-login if no users exist (allow first admin to register)
-        if (User::count() === 0) {
-            return $next($request);
-        }
-
-        // Auto-login guests as demo user
-        $demoUser = $this->getOrCreateDemoUser();
-        Auth::login($demoUser);
 
         return $next($request);
     }
 
-    private function getOrCreateDemoUser(): User
+    /**
+     * Create the demo user if it doesn't exist.
+     */
+    protected function ensureDemoUserExists(): void
     {
         $email = config('app.demo_user_email');
 
-        return User::firstOrCreate(
-            ['email' => $email],
-            [
+        if (! User::where('email', $email)->exists()) {
+            User::create([
                 'name' => 'Demo User',
                 'email' => $email,
-                'password' => bcrypt(str()->random(32)),
+                'password' => bcrypt(config('app.demo_user_password')),
                 'role' => User::ROLE_DEMO,
-                'invitation_accepted_at' => now(),
-            ]
-        );
+            ]);
+        }
     }
 }

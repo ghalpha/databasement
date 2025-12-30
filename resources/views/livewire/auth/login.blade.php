@@ -5,6 +5,12 @@
             <p class="text-sm opacity-70">{{ __('Enter your email and password below to log in') }}</p>
         </div>
 
+        @if (config('app.demo_mode'))
+            <x-alert class="alert-info" icon="o-information-circle">
+                {{ __('Demo mode: credentials are pre-filled. Just click Log in!') }}
+            </x-alert>
+        @endif
+
         @if (session('status'))
             <x-alert class="alert-success" icon="o-check-circle">{{ session('status') }}</x-alert>
         @endif
@@ -21,6 +27,7 @@
                 autofocus
                 autocomplete="email"
                 placeholder="email@example.com"
+                value="{{ config('app.demo_mode') ? config('app.demo_user_email') : old('email') }}"
             />
 
             <!-- Password -->
@@ -31,6 +38,7 @@
                     required
                     autocomplete="current-password"
                     placeholder="{{ __('Password') }}"
+                    value="{{ config('app.demo_mode') ? config('app.demo_user_password') : '' }}"
                 />
 
                 @if (Route::has('password.request'))

@@ -25,17 +25,6 @@ Route::get('/', function () {
 Route::get('/invitation/{token}', \App\Livewire\Auth\AcceptInvitation::class)
     ->name('invitation.accept');
 
-// Demo mode - logout demo user to allow real login
-Route::post('/demo/logout', function () {
-    if (auth()->user()?->isDemo()) {
-        auth()->logout();
-        request()->session()->invalidate();
-        request()->session()->regenerateToken();
-    }
-
-    return redirect()->route('login');
-})->name('demo.logout');
-
 // Dashboard
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth'])

@@ -153,13 +153,14 @@ return [
     | Demo Mode
     |--------------------------------------------------------------------------
     |
-    | When enabled, guests are automatically logged in as a demo user with
-    | read-only access. The demo user can view all features but cannot
-    | create, edit, or delete resources.
+    | When enabled, the login form is pre-filled with demo credentials.
+    | Demo users have read-only access - they can view all features but
+    | cannot create, edit, or delete resources.
     |
     */
 
     'demo_mode' => env('DEMO_MODE', false),
     'demo_user_email' => env('DEMO_USER_EMAIL', 'demo@example.com'),
+    'demo_user_password' => env('DEMO_USER_PASSWORD', 'demo'),
 
 ];

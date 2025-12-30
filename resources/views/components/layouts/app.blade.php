@@ -63,27 +63,20 @@
                 <x-menu activate-by-route class="mt-auto" title="">
                     <x-menu-sub title="{{ $user->name }}"  icon="o-user">
                         <x-menu-item title="{{ __('Appearance') }}" icon="o-paint-brush" link="{{ route('appearance.edit') }}" wire:navigate />
-                        @if($user->isDemo())
-                            <form method="POST" action="{{ route('demo.logout') }}" class="w-full">
-                                @csrf
-                                <x-button type="submit" class="w-full btn-ghost justify-start" icon="o-arrow-right-start-on-rectangle">
-                                    {{ __('Sign in as real user') }}
-                                </x-button>
-                            </form>
-                        @else
+                        @unless($user->isDemo())
                             <x-menu-item title="{{ __('Profile') }}" icon="o-user" link="{{ route('profile.edit') }}" wire:navigate />
                             <x-menu-item title="{{ __('Password') }}" icon="o-key" link="{{ route('user-password.edit') }}" wire:navigate />
                             @if (Laravel\Fortify\Features::canManageTwoFactorAuthentication())
                                 <x-menu-item title="{{ __('Two-Factor Auth') }}" icon="o-shield-check" link="{{ route('two-factor.show') }}" wire:navigate />
                             @endif
                             <x-menu-item title="{{ __('API Tokens') }}" icon="o-key" link="{{ route('api-tokens.index') }}" wire:navigate />
-                            <form method="POST" action="{{ route('logout') }}" class="w-full">
-                                @csrf
-                                <x-button type="submit" class="w-full" icon="o-power">
-                                    {{ __('Logout') }}
-                                </x-button>
-                            </form>
-                        @endif
+                        @endunless
+                        <form method="POST" action="{{ route('logout') }}" class="w-full">
+                            @csrf
+                            <x-button type="submit" class="w-full" icon="o-power">
+                                {{ __('Logout') }}
+                            </x-button>
+                        </form>
                     </x-menu-sub>
                 </x-menu>
             @endif
