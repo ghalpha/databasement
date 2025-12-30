@@ -2,6 +2,7 @@
 
 namespace App\Livewire\DatabaseServer;
 
+use App\Livewire\Concerns\HandlesDemoMode;
 use App\Livewire\Forms\DatabaseServerForm;
 use App\Models\DatabaseServer;
 use Illuminate\Contracts\View\View;
@@ -11,6 +12,7 @@ use Livewire\Component;
 class Create extends Component
 {
     use AuthorizesRequests;
+    use HandlesDemoMode;
 
     public DatabaseServerForm $form;
 
@@ -21,10 +23,7 @@ class Create extends Component
 
     public function save(): void
     {
-        if (auth()->user()->isDemo()) {
-            session()->flash('demo_notice', __('Demo mode is enabled. Changes cannot be saved.'));
-            $this->redirect(route('database-servers.index'), navigate: true);
-
+        if ($this->abortIfDemoMode('database-servers.index')) {
             return;
         }
 

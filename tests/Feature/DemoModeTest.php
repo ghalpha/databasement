@@ -233,7 +233,7 @@ test('demo user cannot access two-factor settings', function () {
         ->get(route('two-factor.show'));
 
     // Should either be forbidden or redirected (not OK)
-    expect($response->status())->not->toBe(200);
+    $response->assertForbidden();
 });
 
 test('demo user cannot access api tokens settings', function () {

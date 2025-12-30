@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Volume;
 
+use App\Livewire\Concerns\HandlesDemoMode;
 use App\Livewire\Forms\VolumeForm;
 use App\Models\Volume;
 use Illuminate\Contracts\View\View;
@@ -11,6 +12,7 @@ use Livewire\Component;
 class Edit extends Component
 {
     use AuthorizesRequests;
+    use HandlesDemoMode;
 
     public VolumeForm $form;
 
@@ -26,10 +28,7 @@ class Edit extends Component
 
     public function save(): void
     {
-        if (auth()->user()->isDemo()) {
-            session()->flash('demo_notice', __('Demo mode is enabled. Changes cannot be saved.'));
-            $this->redirect(route('volumes.index'), navigate: true);
-
+        if ($this->abortIfDemoMode('volumes.index')) {
             return;
         }
 
