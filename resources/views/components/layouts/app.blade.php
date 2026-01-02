@@ -87,9 +87,7 @@
     <x-slot:content>
         {{-- Demo mode banner --}}
         @if (config('app.demo_mode') && auth()->user()?->isDemo())
-            <x-alert class="alert-warning mb-4" icon="o-eye">
-                {{ __("You're in demo mode. Some data modifications are disabled.") }}
-            </x-alert>
+            <x-alert :title="__('You\'re in demo mode. Some data modifications are disabled.')" class="alert-warning mb-4" icon="o-eye" />
         @endif
 
         @if (session('status'))
