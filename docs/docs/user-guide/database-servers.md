@@ -28,33 +28,62 @@ Database servers are the source of your backups. Databasement can connect to and
 
 ### MySQL / MariaDB
 
-The database user needs the following privileges for backup operations:
+#### Creating the user
 
 ```sql
-GRANT SELECT, SHOW VIEW, TRIGGER, LOCK TABLES, PROCESS, EVENT, RELOAD
-ON database_name.*
-TO 'backup_user'@'%';
+CREATE USER 'databasement'@'%' IDENTIFIED BY 'your_secure_password';
 ```
 
-For backing up all databases:
+#### Permissions for backup and restore (all databases)
 
 ```sql
-GRANT SELECT, SHOW VIEW, TRIGGER, LOCK TABLES, PROCESS, EVENT, RELOAD
-ON *.*
-TO 'backup_user'@'%';
+GRANT SELECT, SHOW VIEW, TRIGGER, LOCK TABLES, PROCESS, EVENT, RELOAD,
+      CREATE, DROP, ALTER, INDEX, INSERT, UPDATE, DELETE, REFERENCES
+ON *.* TO 'databasement'@'%';
+
+FLUSH PRIVILEGES;
 ```
+
+:::note[Single database only]
+To restrict the user to a single database, replace `*.*` with `database_name.*`. Note that with single-database permissions, the user cannot create or drop the database itself - you'll need to ensure the target database exists before restoring.
+:::
 
 ### PostgreSQL
 
-The user should have read access to the databases you want to backup:
+#### Creating the user
 
 ```sql
-GRANT CONNECT ON DATABASE database_name TO backup_user;
-GRANT USAGE ON SCHEMA public TO backup_user;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO backup_user;
+CREATE USER databasement WITH PASSWORD 'your_secure_password';
 ```
 
-For full backup capabilities, consider using a superuser or the database owner.
+#### Permissions for backup and restore (all databases)
+
+For full backup and restore capabilities, the user needs to be a superuser or have the `CREATEDB` privilege:
+
+```sql
+-- Option 1: Superuser (full access)
+ALTER USER databasement WITH SUPERUSER;
+
+-- Option 2: Create database privilege (can create/drop databases for restore)
+ALTER USER databasement WITH CREATEDB;
+```
+
+If using Option 2, you also need to grant access to existing databases:
+
+```sql
+-- Grant ownership or full privileges on the database
+GRANT ALL PRIVILEGES ON DATABASE database_name TO databasement;
+
+-- Connect to the database and grant schema access
+\c database_name
+GRANT ALL PRIVILEGES ON SCHEMA public TO databasement;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO databasement;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO databasement;
+```
+
+:::note[Single database only]
+For single-database access without `CREATEDB`, the target database must already exist. Grant `ALL PRIVILEGES` on that specific database and its schema. The user won't be able to drop/recreate the database during restore - Databasement will drop and recreate tables instead.
+:::
 
 ## Testing Connections
 
