@@ -146,4 +146,4 @@ When enabled (default), OAuth logins are automatically linked to existing users 
 OAUTH_AUTO_LINK_BY_EMAIL=true  # Default: true
 ```
 
-For local development OAuth testing, see the [Development Guide](/docs/contributing/development#oauth--sso-testing).
+For local development OAuth testing, see the [Development Guide](/contributing/development#oauth--sso-testing).
